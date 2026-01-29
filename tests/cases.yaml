@@ -1,0 +1,149 @@
+- name: "strict_no_change_plain"
+  mode: "strict"
+  input_text: "Привет, мир!"
+  expected_clean_text: "Привет, мир!"
+
+- name: "strict_collapse_spaces"
+  mode: "strict"
+  input_text: "Привет,   мир!"
+  expected_clean_text: "Привет, мир!"
+
+- name: "strict_trim"
+  mode: "strict"
+  input_text: "   Привет, мир!   "
+  expected_clean_text: "Привет, мир!"
+
+- name: "strict_newlines_normalize"
+  mode: "strict"
+  input_text: "Привет,\r\nмир!\r\n"
+  expected_clean_text: "Привет,\nмир!\n"
+
+- name: "strict_nbsp_to_space"
+  mode: "strict"
+  input_text: "Цена:\u00A0100\u00A0руб."
+  expected_clean_text: "Цена: 100 руб."
+
+- name: "strict_zero_width_remove"
+  mode: "strict"
+  input_text: "пр\u200Bивет"
+  expected_clean_text: "привет"
+
+- name: "strict_keep_number"
+  mode: "strict"
+  input_text: "Заказ 12345 принят."
+  expected_clean_text: "Заказ 12345 принят."
+
+- name: "strict_keep_date"
+  mode: "strict"
+  input_text: "Встреча 29.01.2026 в 10:30."
+  expected_clean_text: "Встреча 29.01.2026 в 10:30."
+
+- name: "strict_keep_range"
+  mode: "strict"
+  input_text: "Скидка 10–20% только сегодня."
+  expected_clean_text: "Скидка 10–20% только сегодня."
+
+- name: "strict_keep_money_format"
+  mode: "strict"
+  input_text: "Итого: 1 000,50 ₽."
+  expected_clean_text: "Итого: 1 000,50 ₽."
+
+- name: "strict_keep_url"
+  mode: "strict"
+  input_text: "Смотри https://example.com/test?x=1&y=2"
+  expected_clean_text: "Смотри https://example.com/test?x=1&y=2"
+
+- name: "strict_keep_email"
+  mode: "strict"
+  input_text: "Пиши на admin+test@mail.example"
+  expected_clean_text: "Пиши на admin+test@mail.example"
+
+- name: "strict_keep_phone"
+  mode: "strict"
+  input_text: "Тел: +7 (999) 123-45-67"
+  expected_clean_text: "Тел: +7 (999) 123-45-67"
+
+- name: "strict_keep_path_windows"
+  mode: "strict"
+  input_text: "Файл лежит в C:\\Users\\Bob\\file.txt"
+  expected_clean_text: "Файл лежит в C:\\Users\\Bob\\file.txt"
+
+- name: "strict_keep_path_unix"
+  mode: "strict"
+  input_text: "Логи: /var/log/nginx/access.log"
+  expected_clean_text: "Логи: /var/log/nginx/access.log"
+
+- name: "strict_keep_command"
+  mode: "strict"
+  input_text: "Запусти: sudo systemctl restart nginx"
+  expected_clean_text: "Запусти: sudo systemctl restart nginx"
+
+- name: "strict_keep_code_block"
+  mode: "strict"
+  input_text: "Вот код:\n```python\nprint('hi')\n```"
+  expected_clean_text: "Вот код:\n```python\nprint('hi')\n```"
+
+- name: "strict_keep_json_like"
+  mode: "strict"
+  input_text: "payload={\"a\":1,\"b\":2}"
+  expected_clean_text: "payload={\"a\":1,\"b\":2}"
+
+- name: "strict_mixed_lang_gate"
+  mode: "strict"
+  input_text: "Please fix this text: Привет   мир!"
+  expected_clean_text: "Please fix this text: Привет мир!"
+
+- name: "smart_basic_spacing_after_punct"
+  mode: "smart"
+  input_text: "Привет,мир!"
+  expected_clean_text: "Привет, мир!"
+
+- name: "smart_basic_spacing_before_punct"
+  mode: "smart"
+  input_text: "Привет , мир !"
+  expected_clean_text: "Привет, мир!"
+
+- name: "smart_multi_punct_safe"
+  mode: "smart"
+  input_text: "Ну что???   Поехали!!!"
+  expected_clean_text: "Ну что??? Поехали!!!"
+
+- name: "smart_quotes_normalize"
+  mode: "smart"
+  input_text: "Он сказал: \"привет\"."
+  expected_clean_text: "Он сказал: \"привет\"."
+
+- name: "smart_keep_url_with_punct"
+  mode: "smart"
+  input_text: "Ссылка: https://example.com, ок?"
+  expected_clean_text: "Ссылка: https://example.com, ок?"
+
+- name: "smart_keep_id_ticket"
+  mode: "smart"
+  input_text: "Тикет ABC-12345 закрыт."
+  expected_clean_text: "Тикет ABC-12345 закрыт."
+
+- name: "smart_keep_uuid"
+  mode: "smart"
+  input_text: "id=550e8400-e29b-41d4-a716-446655440000"
+  expected_clean_text: "id=550e8400-e29b-41d4-a716-446655440000"
+
+- name: "smart_keep_brand_like"
+  mode: "smart"
+  input_text: "Купил iPhone 15 Pro."
+  expected_clean_text: "Купил iPhone 15 Pro."
+
+- name: "smart_do_not_fix_ambiguous_lexeme"
+  mode: "smart"
+  input_text: "что бы ты сделал?"
+  expected_clean_text: "что бы ты сделал?"
+
+- name: "smart_spaces_around_dash"
+  mode: "smart"
+  input_text: "Москва-СПб"
+  expected_clean_text: "Москва-СПб"
+
+- name: "smart_keep_math"
+  mode: "smart"
+  input_text: "2+2=4 и 3*3=9"
+  expected_clean_text: "2+2=4 и 3*3=9"
