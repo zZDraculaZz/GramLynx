@@ -1,8 +1,8 @@
-# Text → Clean Text Microservice (Skeleton)
+# Микросервис «Text → Clean Text» (каркас)
 
-Safe text cleaning service with strict guardrails. This repository is a **skeleton** implementation that follows the requested architecture and can run locally without external ML models.
+Безопасный сервис очистки текста с жёсткими ограничениями. Репозиторий представляет собой **каркас** и следует описанной архитектуре, работает локально без внешних ML-моделей.
 
-## Quickstart
+## Быстрый старт
 
 ```bash
 pip install -e .
@@ -12,7 +12,7 @@ uvicorn app.main:app --reload
 ## API
 
 ### POST `/clean`
-Request:
+Запрос:
 ```json
 {
   "text": "Пример текста...",
@@ -20,24 +20,33 @@ Request:
 }
 ```
 
-Response:
+Ответ:
 ```json
 {
   "clean_text": "Пример текста..."
 }
 ```
 
-## Modes
-- **strict**: minimal changes, high thresholds, more aggressive rollback.
-- **smart**: allows a bit more safe formatting while preserving meaning.
+## Режимы
+- **strict**: минимальные изменения, высокие пороги уверенности, агрессивный откат.
+- **smart**: допускает чуть больше безопасного форматирования при сохранении смысла.
 
-## Testing
+## Тестирование
 
 ```bash
 pytest -q
 ```
 
-## Notes
-- No external ML models are required. A rule-based model stub is used.
-- Protected Zones are masked before any edits and restored at the end.
-- Raw user text is not logged by default.
+## Плагинная система стадий
+
+Стадии собираются через реестр `stage_name -> StageClass`. Фабрика `build_pipeline` формирует пайплайн на основе `PolicyConfig.enabled_stages`.
+
+Пример кастомной стадии находится в `app/core/stages/custom_example.py` и выключен по умолчанию. Чтобы включить:
+
+1. Добавьте `"custom_example"` в `enabled_stages` нужной политики.
+2. Убедитесь, что стадия не меняет Protected Zones (иначе guardrails откатят изменения).
+
+## Примечания
+- Внешние ML-модели не требуются: используется rule-based заглушка.
+- Protected Zones маскируются до правок и восстанавливаются в конце.
+- Сырые пользовательские тексты по умолчанию не логируются.
