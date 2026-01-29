@@ -1,4 +1,4 @@
-"""Policy engine and configuration."""
+"""Policy Engine и конфигурация."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -7,7 +7,7 @@ from typing import List
 
 @dataclass(frozen=True)
 class PolicyConfig:
-    """Configuration for pipeline behavior."""
+    """Конфигурация поведения пайплайна."""
 
     enabled_stages: List[str]
     max_edits_per_sentence: int
@@ -51,7 +51,7 @@ SMART_POLICY = PolicyConfig(
 
 
 def get_policy(mode: str) -> PolicyConfig:
-    """Return policy config based on mode."""
+    """Возвращает конфиг политики по режиму."""
 
     if mode == "smart":
         return SMART_POLICY

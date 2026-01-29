@@ -1,4 +1,4 @@
-"""Pipeline orchestrator."""
+"""Оркестратор пайплайна."""
 from __future__ import annotations
 
 import time
@@ -20,7 +20,7 @@ from app.core.stages.s7_assemble import assemble_text
 
 
 class Orchestrator:
-    """Executes the cleaning pipeline."""
+    """Запускает и контролирует пайплайн очистки."""
 
     def __init__(self, correlation_id: str) -> None:
         self.correlation_id = correlation_id
@@ -75,3 +75,8 @@ class Orchestrator:
             duration_ms=total_ms,
         )
         return document.working_text
+
+    def clean(self, text: str, mode: str) -> str:
+        """Публичный метод для запуска очистки текста."""
+
+        return self.run(text=text, mode=mode)
