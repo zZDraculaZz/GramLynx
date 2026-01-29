@@ -15,7 +15,7 @@ from app.core.stages.s2_segment import segment_text
 from app.core.stages.s3_spelling import spelling_corrections
 from app.core.stages.s4_grammar import grammar_corrections
 from app.core.stages.s5_punct import punct_corrections
-from app.core.stages.s6_guardrails import guardrails_check
+from app.core.stages.s6_guardrails import final_guardrails_check, guardrails_check
 from app.core.stages.s7_assemble import assemble_text
 
 
@@ -51,6 +51,9 @@ class Orchestrator:
         document.working_text, document.placeholders_map, document.protected_spans = (
             mask_protected_zones(document.working_text)
         )
+        document.safe_snapshot_placeholders = dict(document.placeholders_map)
+        document.safe_snapshot_spans = list(document.protected_spans)
+        document.safe_snapshot_text = document.working_text
 
         for stage_name in policy.enabled_stages:
             stage = stages[stage_name]
@@ -66,6 +69,7 @@ class Orchestrator:
                 duration_ms=duration_ms,
             )
 
+        final_guardrails_check(context)
         document.confidence = aggregate_confidence(document)
         total_ms = (time.time() - start_time) * 1000
         log_event(

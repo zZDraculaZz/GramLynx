@@ -1,4 +1,4 @@
-"""Core text model structures."""
+"""Структуры внутренней модели текста."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 
 @dataclass(frozen=True)
 class ProtectedSpan:
-    """Represents a protected span in the text."""
+    """Описывает защищённый фрагмент текста."""
 
     start: int
     end: int
@@ -17,7 +17,7 @@ class ProtectedSpan:
 
 @dataclass(frozen=True)
 class Token:
-    """Represents a token with offsets."""
+    """Описывает токен с позициями в тексте."""
 
     text: str
     start: int
@@ -27,7 +27,7 @@ class Token:
 
 @dataclass(frozen=True)
 class Edit:
-    """Represents a candidate or applied edit."""
+    """Описывает кандидат или применённую правку."""
 
     start: int
     end: int
@@ -41,7 +41,7 @@ class Edit:
 
 @dataclass
 class AuditLog:
-    """Captures applied/rejected edits and rollback events."""
+    """Журнал применённых/отклонённых правок и откатов."""
 
     applied_edits: List[Edit] = field(default_factory=list)
     rejected_edits: List[Edit] = field(default_factory=list)
@@ -50,7 +50,7 @@ class AuditLog:
 
 @dataclass
 class TextDocument:
-    """Holds the text during processing."""
+    """Состояние текста во время обработки."""
 
     raw_text: str
     working_text: str
@@ -59,3 +59,6 @@ class TextDocument:
     placeholders_map: Dict[str, str] = field(default_factory=dict)
     audit_log: AuditLog = field(default_factory=AuditLog)
     confidence: Optional[float] = None
+    safe_snapshot_text: Optional[str] = None
+    safe_snapshot_placeholders: Dict[str, str] = field(default_factory=dict)
+    safe_snapshot_spans: List[ProtectedSpan] = field(default_factory=list)

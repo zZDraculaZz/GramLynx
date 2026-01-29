@@ -17,6 +17,7 @@ class PolicyConfig:
     min_confidence_overall: float
     allow_punct_stage: bool
     language_gate_thresholds: float
+    pz_buffer_chars: int
 
 
 STRICT_POLICY = PolicyConfig(
@@ -28,6 +29,7 @@ STRICT_POLICY = PolicyConfig(
     min_confidence_overall=0.99,
     allow_punct_stage=False,
     language_gate_thresholds=0.9,
+    pz_buffer_chars=2,
 )
 
 SMART_POLICY = PolicyConfig(
@@ -47,6 +49,7 @@ SMART_POLICY = PolicyConfig(
     min_confidence_overall=0.95,
     allow_punct_stage=True,
     language_gate_thresholds=0.8,
+    pz_buffer_chars=1,
 )
 
 
