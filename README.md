@@ -4,6 +4,8 @@
 
 ## Быстрый старт
 
+Минимальная версия Python: **3.13**.
+
 ```bash
 pip install -e .
 uvicorn app.main:app --reload
