@@ -24,7 +24,6 @@ def normalize_text(context: StageContext) -> None:
             content = re.sub(r"[ \t\f\v]+", " ", line).strip()
             normalized_lines.append(content)
     context.document.working_text = "".join(normalized_lines)
-    if context.document.safe_snapshot_text is None:
-        context.document.safe_snapshot_text = context.document.working_text
-        context.document.safe_snapshot_placeholders = dict(context.document.placeholders_map)
-        context.document.safe_snapshot_spans = list(context.document.protected_spans)
+    context.document.safe_snapshot_text = context.document.working_text
+    context.document.safe_snapshot_placeholders = dict(context.document.placeholders_map)
+    context.document.safe_snapshot_spans = list(context.document.protected_spans)

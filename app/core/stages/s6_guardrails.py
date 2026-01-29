@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from difflib import SequenceMatcher
 
 from app.core.protected_zones.detector import (
     count_placeholders,
@@ -67,20 +68,19 @@ def _rollback_to_snapshot(context: StageContext) -> None:
 def _changed_ratio(baseline: str, current: str, baseline_len: int) -> float:
     """Считает долю изменений с учётом разницы длины."""
 
-    ratio = sum(1 for a, b in zip(baseline, current) if a != b) / baseline_len
-    if len(current) != len(baseline):
-        ratio = max(ratio, abs(len(current) - len(baseline)) / baseline_len)
-    return ratio
+    matcher = SequenceMatcher(None, baseline, current)
+    return 1.0 - matcher.ratio()
 
 
 def _placeholders_restored(text: str, placeholders: dict[str, str]) -> bool:
     """Проверяет, что все исходные фрагменты присутствуют byte-to-byte."""
 
-    expected = Counter(placeholders.values())
-    actual = Counter()
-    for original in placeholders.values():
-        actual[original] = text.count(original)
-    return actual >= expected
+    working = text
+    for placeholder, original in placeholders.items():
+        if original not in working:
+            return False
+        working = working.replace(original, placeholder, 1)
+    return True
 
 
 def _detector_consistent(text: str, placeholders: dict[str, str]) -> bool:

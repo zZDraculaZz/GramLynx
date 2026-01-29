@@ -18,6 +18,13 @@ def test_punct_does_not_touch_email_adjacent_punct() -> None:
     assert result == text
 
 
+def test_punct_does_not_touch_url_with_parenthesis() -> None:
+    orchestrator = Orchestrator(correlation_id="test")
+    text = "Ссылка (https://example.com) ок"
+    result = orchestrator.clean(text, mode="smart")
+    assert result == text
+
+
 def test_edit_budget_triggers_rollback() -> None:
     orchestrator = Orchestrator(correlation_id="test")
     text = "А,Б,В,Г,Д,Е,Ж,З,И,К,Л,М"

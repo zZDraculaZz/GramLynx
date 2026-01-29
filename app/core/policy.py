@@ -44,7 +44,7 @@ SMART_POLICY = PolicyConfig(
     ],
     max_edits_per_sentence=2,
     max_edits_total=10,
-    max_changed_char_ratio=0.05,
+    max_changed_char_ratio=0.1,
     min_confidence_per_edit=0.95,
     min_confidence_overall=0.95,
     allow_punct_stage=True,
