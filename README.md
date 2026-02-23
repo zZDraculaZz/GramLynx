@@ -46,6 +46,7 @@ pytest -q
 ```bash
 ruff check .
 pytest -q
+docker build .
 ```
 
 ## Run в Docker
