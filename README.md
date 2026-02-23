@@ -60,23 +60,15 @@ docker run --rm -p 8000:8000 gramlynx:local
 
 ## Метрики (опционально)
 
-Включение Prometheus-метрик:
+## YAML-конфигурация (опционально)
+
+Чтобы загрузить правила из YAML, укажите путь в `GRAMLYNX_CONFIG_YAML`:
 
 ```bash
-GRAMLYNX_ENABLE_METRICS=1 uvicorn app.main:app --reload
+GRAMLYNX_CONFIG_YAML=./config.example.yml uvicorn app.main:app --reload
 ```
 
-Endpoint метрик: `http://localhost:8000/metrics`.
-Метрики не содержат пользовательский текст.
-
-## Run в Docker
-
-```bash
-docker build -t gramlynx:local .
-docker run --rm -p 8000:8000 gramlynx:local
-```
-
-## Метрики (опционально)
+Если YAML невалидный, сервис не стартует (fail-closed).
 
 Включение Prometheus-метрик:
 

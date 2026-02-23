@@ -1,0 +1,33 @@
+limits:
+  max_body_bytes: 1048576
+  max_text_chars: 20000
+
+policies:
+  strict:
+    max_changed_char_ratio: 0.02
+    pz_buffer_chars: 2
+    enabled_stages:
+      - s1_normalize
+      - s2_segment
+      - s6_guardrails
+      - s7_assemble
+  smart:
+    max_changed_char_ratio: 0.1
+    pz_buffer_chars: 1
+    enabled_stages:
+      - s1_normalize
+      - s2_segment
+      - s3_spelling
+      - s4_grammar
+      - s5_punct
+      - s6_guardrails
+      - s7_assemble
+
+lexicon:
+  allowlist:
+    - Python
+    - FastAPI
+    - Docker
+  denylist:
+    - TODO
+    - FIXME
