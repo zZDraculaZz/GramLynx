@@ -36,8 +36,19 @@ uvicorn app.main:app --reload
 ## Тестирование
 
 ```bash
+ruff check .
 pytest -q
 ```
+
+## Run в Docker
+
+```bash
+docker build -t gramlynx:local .
+docker run --rm -p 8000:8000 gramlynx:local
+```
+
+Uvicorn пишет `http://0.0.0.0:8000` — это bind-адрес. В браузере открывать нужно
+`http://localhost:8000/docs` (или `http://127.0.0.1:8000/docs`).
 
 ## Плагинная система стадий
 
