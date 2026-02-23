@@ -25,6 +25,7 @@ dev = [
     "httpx>=0.26.0",
     "pyyaml>=6.0.1",
     "ruff>=0.4.0",
+    "hypothesis>=6.0.0",
 ]
 
 [tool.pytest.ini_options]

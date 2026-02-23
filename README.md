@@ -11,10 +11,12 @@ Production-ready микросервис очистки текста с жёст�
 
 ## Быстрый старт
 
-Минимальная версия Python: **3.13**.
+Требуется Python: **3.10.x**.
 
 ```bash
-pip install -e .
+pip install -e ".[dev]"
+ruff check .
+pytest -q
 uvicorn app.main:app --reload
 pytest -q
 ```
