@@ -26,6 +26,10 @@ dev = [
     "pyyaml>=6.0.1",
     "ruff>=0.4.0",
     "hypothesis>=6.0.0",
+    "prometheus-fastapi-instrumentator>=7.0.0",
+]
+metrics = [
+    "prometheus-fastapi-instrumentator>=7.0.0",
 ]
 
 [tool.pytest.ini_options]

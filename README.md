@@ -58,6 +58,24 @@ docker build -t gramlynx:local .
 docker run --rm -p 8000:8000 gramlynx:local
 ```
 
+## Метрики (опционально)
+
+Включение Prometheus-метрик:
+
+```bash
+GRAMLYNX_ENABLE_METRICS=1 uvicorn app.main:app --reload
+```
+
+Endpoint метрик: `http://localhost:8000/metrics`.
+Метрики не содержат пользовательский текст.
+
+## Run в Docker
+
+```bash
+docker build -t gramlynx:local .
+docker run --rm -p 8000:8000 gramlynx:local
+```
+
 Uvicorn пишет `http://0.0.0.0:8000` — это bind-адрес. В браузере открывать нужно
 `http://localhost:8000/docs` (или `http://127.0.0.1:8000/docs`).
 
