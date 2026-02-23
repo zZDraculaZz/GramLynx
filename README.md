@@ -51,23 +51,6 @@ pytest -q
 docker build .
 ```
 
-## Run в Docker
-
-```bash
-docker build -t gramlynx:local .
-docker run --rm -p 8000:8000 gramlynx:local
-```
-
-## Метрики (опционально)
-
-## YAML-конфигурация (опционально)
-
-Чтобы загрузить правила из YAML, укажите путь в `GRAMLYNX_CONFIG_YAML`:
-
-```bash
-GRAMLYNX_CONFIG_YAML=./config.example.yml uvicorn app.main:app --reload
-```
-
 ## Метрики (опционально)
 
 ## YAML-конфигурация (опционально)
@@ -92,6 +75,12 @@ Endpoint метрик: `http://localhost:8000/metrics`.
 
 Лимит тела запроса задаётся env `GRAMLYNX_MAX_BODY_BYTES` (по умолчанию `1048576`).
 Пример: `GRAMLYNX_MAX_BODY_BYTES=262144 uvicorn app.main:app --reload`.
+
+## Audit-лог запросов
+
+На каждый HTTP-запрос пишется одна структурированная строка аудита с `request_id` для корреляции.
+Пример: `{"event":"request_audit","request_id":"...","method":"POST","path":"/clean","status_code":200,"duration_ms":12.3,"input_len_chars":10,"output_len_chars":10,"changed_ratio":0.0,"confidence":1.0,"rollback_applied":false,"pz_spans_count":0}`.
+В audit-логе нет полей `text`/`clean_text` и нет содержимого пользовательского текста.
 
 ## Run в Docker
 

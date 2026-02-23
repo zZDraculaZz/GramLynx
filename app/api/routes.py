@@ -1,7 +1,7 @@
 """API routes."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 
 from app.api.schemas import CleanRequest, CleanResponse
 from app.core.config import load_app_config
@@ -14,6 +14,7 @@ router = APIRouter()
 @router.post("/clean", response_model=CleanResponse)
 async def clean_text(
     payload: CleanRequest,
+    request: Request,
     x_correlation_id: str | None = Header(default=None, alias="X-Correlation-Id"),
 ) -> CleanResponse:
     """Clean input text and return safe output."""
@@ -26,6 +27,7 @@ async def clean_text(
         raise HTTPException(status_code=422, detail="Text too long")
     orchestrator = Orchestrator(correlation_id=correlation_id)
     clean = orchestrator.run(text=payload.text, mode=payload.mode)
+    request.state.clean_audit = dict(orchestrator.last_run_stats)
     return CleanResponse(clean_text=clean)
 
 

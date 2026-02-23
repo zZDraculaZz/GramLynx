@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from app.api.routes import router
 from app.core.config import ConfigError, load_app_config
 from app.core.observability import log_event
+from app.middleware.audit_log import AuditLogMiddleware
 from app.middleware.max_body_size import MaxBodySizeMiddleware
 from app.middleware.request_id import RequestIDMiddleware
 
@@ -35,6 +36,7 @@ except ConfigError as exc:
 
 app = FastAPI(title="Text Clean Service", version="0.1.0")
 app.add_middleware(MaxBodySizeMiddleware, max_body_bytes=_get_max_body_bytes())
+app.add_middleware(AuditLogMiddleware)
 app.add_middleware(RequestIDMiddleware)
 app.include_router(router)
 
