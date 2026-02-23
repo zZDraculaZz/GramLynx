@@ -1,13 +1,22 @@
-# Микросервис «Text → Clean Text» (каркас)
+# Микросервис «Text → Clean Text»
 
-Безопасный сервис очистки текста с жёсткими ограничениями. Репозиторий представляет собой **каркас** и следует описанной архитектуре, работает локально без внешних ML-моделей.
+Production-ready микросервис очистки текста с жёсткими ограничениями.
+
+## Гарантии сервиса
+
+- Контракт API: вход `text + mode`, выход только `clean_text`.
+- Сервис не добавляет объяснения, теги, леммы, морфологию и не делает перефразирование.
+- Protected Zones не меняются byte-to-byte.
+- При нарушении guardrails применяется rollback.
 
 ## Быстрый старт
 
-Минимальная версия Python: **3.13**.
+Требуется Python: **3.10.x**.
 
 ```bash
-pip install -e .
+pip install -e ".[dev]"
+ruff check .
+pytest -q
 uvicorn app.main:app --reload
 ```
 
@@ -36,8 +45,35 @@ uvicorn app.main:app --reload
 ## Тестирование
 
 ```bash
+ruff check .
 pytest -q
 ```
+
+## Метрики (опционально)
+
+Включение Prometheus-метрик:
+
+```bash
+GRAMLYNX_ENABLE_METRICS=1 uvicorn app.main:app --reload
+```
+
+Endpoint метрик: `http://localhost:8000/metrics`.
+Метрики не содержат пользовательский текст.
+
+Лимит тела запроса задаётся env `GRAMLYNX_MAX_BODY_BYTES` (по умолчанию `1048576`).
+Пример: `GRAMLYNX_MAX_BODY_BYTES=262144 uvicorn app.main:app --reload`.
+
+## Run в Docker
+
+```bash
+docker build -t gramlynx:local .
+docker run --rm -p 8000:8000 gramlynx:local
+```
+
+Uvicorn пишет `http://0.0.0.0:8000` — это bind-адрес. В браузере открывать нужно
+`http://localhost:8000/docs` (или `http://127.0.0.1:8000/docs`).
+
+Проверка health endpoint локально: `http://localhost:8000/health` (или `http://127.0.0.1:8000/health`).
 
 ## Плагинная система стадий
 
