@@ -8,6 +8,7 @@ from app.core.confidence import aggregate_confidence
 from app.core.model import TextDocument
 from app.core.observability import Metrics, log_event
 from app.core.policy import get_policy
+from app.core.prom_metrics import observe_document_stats, observe_pz_spans
 from app.core.protected_zones.detector import mask_protected_zones
 from app.core.stages.base import StageContext
 from app.core.stages.factory import build_pipeline
@@ -39,6 +40,7 @@ class Orchestrator:
         document.safe_snapshot_placeholders = dict(document.placeholders_map)
         document.safe_snapshot_spans = list(document.protected_spans)
         document.safe_snapshot_text = document.working_text
+        observe_pz_spans(mode=mode, count=len(document.protected_spans))
 
         for stage in build_pipeline(policy):
             stage_start = time.time()
@@ -55,6 +57,12 @@ class Orchestrator:
 
         final_guardrails_check(context)
         document.confidence = aggregate_confidence(document)
+        observe_document_stats(
+            mode=mode,
+            baseline=document.raw_text,
+            current=document.working_text,
+            confidence=document.confidence,
+        )
         total_ms = (time.time() - start_time) * 1000
         log_event(
             event="request_completed",
