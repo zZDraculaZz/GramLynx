@@ -18,6 +18,7 @@ pip install -e ".[dev]"
 ruff check .
 pytest -q
 uvicorn app.main:app --reload
+pytest -q
 ```
 
 ## API
@@ -47,6 +48,24 @@ uvicorn app.main:app --reload
 ```bash
 ruff check .
 pytest -q
+docker build .
+```
+
+## Run в Docker
+
+```bash
+docker build -t gramlynx:local .
+docker run --rm -p 8000:8000 gramlynx:local
+```
+
+## Метрики (опционально)
+
+## YAML-конфигурация (опционально)
+
+Чтобы загрузить правила из YAML, укажите путь в `GRAMLYNX_CONFIG_YAML`:
+
+```bash
+GRAMLYNX_CONFIG_YAML=./config.example.yml uvicorn app.main:app --reload
 ```
 
 ## Метрики (опционально)
