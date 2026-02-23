@@ -1,11 +1,12 @@
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 WORKDIR /app
 
 COPY pyproject.toml README.md ./
 COPY app ./app
 
-RUN pip install --no-cache-dir -e .[dev]
+RUN python -m pip install --no-cache-dir --upgrade pip && \
+    python -m pip install --no-cache-dir -e .
 
 EXPOSE 8000
 
