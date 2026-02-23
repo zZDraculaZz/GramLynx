@@ -1,6 +1,13 @@
-# Микросервис «Text → Clean Text» (каркас)
+# Микросервис «Text → Clean Text»
 
-Безопасный сервис очистки текста с жёсткими ограничениями. Репозиторий представляет собой **каркас** и следует описанной архитектуре, работает локально без внешних ML-моделей.
+Production-ready микросервис очистки текста с жёсткими ограничениями.
+
+## Гарантии сервиса
+
+- Контракт API: вход `text + mode`, выход только `clean_text`.
+- Сервис не добавляет объяснения, теги, леммы, морфологию и не делает перефразирование.
+- Protected Zones не меняются byte-to-byte.
+- При нарушении guardrails применяется rollback.
 
 ## Быстрый старт
 
@@ -9,6 +16,7 @@
 ```bash
 pip install -e .
 uvicorn app.main:app --reload
+pytest -q
 ```
 
 ## API
@@ -36,8 +44,19 @@ uvicorn app.main:app --reload
 ## Тестирование
 
 ```bash
+ruff check .
 pytest -q
 ```
+
+## Run в Docker
+
+```bash
+docker build -t gramlynx:local .
+docker run --rm -p 8000:8000 gramlynx:local
+```
+
+Uvicorn пишет `http://0.0.0.0:8000` — это bind-адрес. В браузере открывать нужно
+`http://localhost:8000/docs` (или `http://127.0.0.1:8000/docs`).
 
 ## Плагинная система стадий
 
