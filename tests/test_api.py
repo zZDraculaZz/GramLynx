@@ -18,3 +18,9 @@ def test_clean_contract() -> None:
 def test_empty_text() -> None:
     response = client.post("/clean", json={"text": "   ", "mode": "strict"})
     assert response.status_code == 422
+
+
+def test_health_endpoint() -> None:
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
