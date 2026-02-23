@@ -18,6 +18,7 @@ pip install -e ".[dev]"
 ruff check .
 pytest -q
 uvicorn app.main:app --reload
+pytest -q
 ```
 
 ## API
@@ -47,6 +48,32 @@ uvicorn app.main:app --reload
 ```bash
 ruff check .
 pytest -q
+docker build .
+```
+
+## Run в Docker
+
+```bash
+docker build -t gramlynx:local .
+docker run --rm -p 8000:8000 gramlynx:local
+```
+
+## Метрики (опционально)
+
+Включение Prometheus-метрик:
+
+```bash
+GRAMLYNX_ENABLE_METRICS=1 uvicorn app.main:app --reload
+```
+
+Endpoint метрик: `http://localhost:8000/metrics`.
+Метрики не содержат пользовательский текст.
+
+## Run в Docker
+
+```bash
+docker build -t gramlynx:local .
+docker run --rm -p 8000:8000 gramlynx:local
 ```
 
 ## Метрики (опционально)
