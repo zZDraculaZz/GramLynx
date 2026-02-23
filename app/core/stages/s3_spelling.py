@@ -3,16 +3,35 @@ from __future__ import annotations
 
 import re
 
+from app.core.config import load_app_config
 from app.core.model import Edit
+from app.core.protected_zones.lexicon import get_allowlist, get_denylist
 from app.core.stages.base import StageContext
-from app.core.stages.helpers.deterministic_spelling import find_replacements
+from app.core.stages.helpers.deterministic_spelling import (
+    find_replacements,
+    find_rulepack_replacements,
+)
 
 
 def spelling_corrections(context: StageContext) -> None:
     """Применяет только детерминированные замены вне Protected Zones."""
 
     text = context.document.working_text
-    edits = find_replacements(text)
+    cfg = load_app_config().rulepack
+    typo_map = cfg.typo_map_smart if context.policy.allow_punct_stage else cfg.typo_map_strict
+
+    edits = find_rulepack_replacements(
+        text=text,
+        typo_map=typo_map,
+        min_token_len=cfg.typo_min_token_len,
+        allowlist=get_allowlist(),
+        denylist=get_denylist(),
+    )
+
+    # backward compatibility for built-in deterministic fixes when no YAML map configured
+    if not edits and not typo_map:
+        edits = find_replacements(text)
+
     if not edits:
         return
 
