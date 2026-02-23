@@ -84,6 +84,14 @@ docker run --rm -p 8000:8000 gramlynx:local
 GRAMLYNX_ENABLE_METRICS=1 uvicorn app.main:app --reload
 ```
 
+## Метрики (опционально)
+
+Включение Prometheus-метрик:
+
+```bash
+GRAMLYNX_ENABLE_METRICS=1 uvicorn app.main:app --reload
+```
+
 Endpoint метрик: `http://localhost:8000/metrics`.
 Метрики не содержат пользовательский текст.
 

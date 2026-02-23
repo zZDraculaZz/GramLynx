@@ -7,6 +7,7 @@ from fastapi import FastAPI
 
 from app.api.routes import router
 from app.middleware.max_body_size import MaxBodySizeMiddleware
+from app.middleware.request_id import RequestIDMiddleware
 
 DEFAULT_MAX_BODY_BYTES = 1_048_576
 
@@ -23,6 +24,7 @@ def _get_max_body_bytes() -> int:
 
 
 app = FastAPI(title="Text Clean Service", version="0.1.0")
+app.add_middleware(RequestIDMiddleware)
 app.add_middleware(MaxBodySizeMiddleware, max_body_bytes=_get_max_body_bytes())
 app.include_router(router)
 
