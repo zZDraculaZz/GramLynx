@@ -59,7 +59,7 @@ def test_invalid_yaml_fails_closed_on_startup(monkeypatch, tmp_path) -> None:
     config_file.write_text(
         """
 limits:
-  max_body_bytes: -1
+  max_body_bytes: LEAK_ME_VALUE
 """,
         encoding="utf-8",
     )
@@ -67,10 +67,12 @@ limits:
     monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(config_file))
     reset_app_config_cache()
 
-    with pytest.raises(RuntimeError, match="Invalid config YAML"):
+    with pytest.raises(RuntimeError, match="Invalid config YAML") as exc_info:
         import app.main as app_main
 
         importlib.reload(app_main)
+
+    assert "LEAK_ME_VALUE" not in str(exc_info.value)
 
 
 def test_defaults_used_when_env_not_set(monkeypatch) -> None:

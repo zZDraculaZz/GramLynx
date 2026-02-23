@@ -9,20 +9,22 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+MODEL_CONFIG = ConfigDict(extra="forbid", hide_input_in_errors=True)
+
 
 class ConfigError(RuntimeError):
     """Raised when external YAML config is invalid."""
 
 
 class LimitsConfig(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = MODEL_CONFIG
 
     max_body_bytes: int = Field(default=1_048_576, gt=0)
     max_text_chars: int = Field(default=20_000, gt=0)
 
 
 class PolicyOverrides(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = MODEL_CONFIG
 
     enabled_stages: list[str] | None = None
     max_changed_char_ratio: float | None = Field(default=None, ge=0.0, le=1.0)
@@ -30,21 +32,21 @@ class PolicyOverrides(BaseModel):
 
 
 class PoliciesConfig(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = MODEL_CONFIG
 
     strict: PolicyOverrides = Field(default_factory=PolicyOverrides)
     smart: PolicyOverrides = Field(default_factory=PolicyOverrides)
 
 
 class LexiconConfig(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = MODEL_CONFIG
 
     allowlist: list[str] | None = None
     denylist: list[str] | None = None
 
 
 class AppConfig(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = MODEL_CONFIG
 
     limits: LimitsConfig = Field(default_factory=LimitsConfig)
     policies: PoliciesConfig = Field(default_factory=PoliciesConfig)
@@ -98,7 +100,10 @@ def load_app_config() -> AppConfig:
     try:
         cfg = AppConfig.model_validate(raw)
     except ValidationError as exc:
-        raise ConfigError(f"Invalid config YAML: {exc.errors()[0]['msg']}") from exc
+        first = exc.errors()[0]
+        err_type = first.get("type", "validation_error")
+        loc = ".".join(str(part) for part in first.get("loc", [])) or "root"
+        raise ConfigError(f"Invalid config YAML: validation_failed at {loc} ({err_type})") from exc
 
     _validate_stages(cfg)
     return cfg
