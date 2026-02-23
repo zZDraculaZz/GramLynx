@@ -3,8 +3,13 @@ from __future__ import annotations
 
 import re
 
+from app.core.config import load_app_config
 from app.core.model import Edit
 from app.core.stages.base import StageContext
+
+
+PUNCT_MARKS = r",\.:;!?"
+LETTER_AFTER_PUNCT = r"[A-Za-zА-Яа-яЁё]"
 
 
 def punct_corrections(context: StageContext) -> None:
@@ -12,16 +17,19 @@ def punct_corrections(context: StageContext) -> None:
 
     text = context.document.working_text
     edits = []
+    punctuation_cfg = load_app_config().rulepack.punctuation
 
-    for match in re.finditer(r"[ \t\f\v]+([,!?;:.])", text):
-        before = match.group(0)
-        after = match.group(1)
-        edits.append((match.start(), match.end(), before, after))
+    if punctuation_cfg.fix_space_before:
+        for match in re.finditer(rf"[ \t\f\v]+([{PUNCT_MARKS}])", text):
+            before = match.group(0)
+            after = match.group(1)
+            edits.append((match.start(), match.end(), before, after))
 
-    for match in re.finditer(r"([,!?;:.])(?=[^\s\n,!?;:.])", text):
-        before = match.group(1)
-        after = f"{before} "
-        edits.append((match.start(), match.end(), before, after))
+    if punctuation_cfg.fix_space_after:
+        for match in re.finditer(rf"([{PUNCT_MARKS}])(?={LETTER_AFTER_PUNCT})", text):
+            before = match.group(1)
+            after = f"{before} "
+            edits.append((match.start(), match.end(), before, after))
 
     edits.sort(key=lambda item: item[0])
     offset = 0

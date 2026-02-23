@@ -45,12 +45,31 @@ class LexiconConfig(BaseModel):
     denylist: list[str] | None = None
 
 
+
+
+class RulepackPunctuationConfig(BaseModel):
+    model_config = MODEL_CONFIG
+
+    fix_space_before: bool = True
+    fix_space_after: bool = True
+
+
+class RulepackConfig(BaseModel):
+    model_config = MODEL_CONFIG
+
+    typo_map_strict: dict[str, str] = Field(default_factory=dict)
+    typo_map_smart: dict[str, str] = Field(default_factory=dict)
+    typo_min_token_len: int = Field(default=4, ge=1)
+    punctuation: RulepackPunctuationConfig = Field(default_factory=RulepackPunctuationConfig)
+
+
 class AppConfig(BaseModel):
     model_config = MODEL_CONFIG
 
     limits: LimitsConfig = Field(default_factory=LimitsConfig)
     policies: PoliciesConfig = Field(default_factory=PoliciesConfig)
     lexicon: LexiconConfig = Field(default_factory=LexiconConfig)
+    rulepack: RulepackConfig = Field(default_factory=RulepackConfig)
 
 
 _ALLOWED_STAGES = {

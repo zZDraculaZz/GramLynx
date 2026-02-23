@@ -63,6 +63,12 @@ GRAMLYNX_CONFIG_YAML=./config.example.yml uvicorn app.main:app --reload
 
 Если YAML невалидный, сервис не стартует (fail-closed).
 
+
+RulePack в YAML (`rulepack`) задаёт безопасные детерминированные правки:
+- `typo_map_strict` — более узкий набор замен для strict,
+- `typo_map_smart` — более широкий набор замен для smart,
+- `punctuation.fix_space_before/fix_space_after` — механика пробелов вокруг `, . : ; ! ?`.
+
 Включение Prometheus-метрик:
 
 ```bash

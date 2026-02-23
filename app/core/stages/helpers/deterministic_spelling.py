@@ -47,7 +47,7 @@ class ReplacementEdit:
 
 
 def find_replacements(text: str) -> list[ReplacementEdit]:
-    """Ищет детерминированные орфографические замены в тексте."""
+    """Ищет базовые детерминированные замены в тексте (legacy)."""
 
     edits: list[ReplacementEdit] = []
     for wrong, right in REPLACEMENTS.items():
@@ -60,5 +60,40 @@ def find_replacements(text: str) -> list[ReplacementEdit]:
                     after=right,
                 )
             )
+    edits.sort(key=lambda item: (item.start, item.end))
+    return edits
+
+
+def find_rulepack_replacements(
+    text: str,
+    typo_map: dict[str, str],
+    min_token_len: int,
+    allowlist: set[str],
+    denylist: set[str],
+) -> list[ReplacementEdit]:
+    """Token-level replacements from rulepack typo_map with strict guards."""
+
+    if not typo_map:
+        return []
+
+    edits: list[ReplacementEdit] = []
+    pattern = re.compile(r"\b[а-яё]{%d,}\b" % max(min_token_len, 1))
+
+    for match in pattern.finditer(text):
+        token = match.group(0)
+        if token in allowlist or token in denylist:
+            continue
+        replacement = typo_map.get(token)
+        if not replacement or replacement == token:
+            continue
+        edits.append(
+            ReplacementEdit(
+                start=match.start(),
+                end=match.end(),
+                before=token,
+                after=replacement,
+            )
+        )
+
     edits.sort(key=lambda item: (item.start, item.end))
     return edits
