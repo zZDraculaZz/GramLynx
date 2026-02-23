@@ -18,6 +18,7 @@ pip install -e ".[dev]"
 ruff check .
 pytest -q
 uvicorn app.main:app --reload
+pytest -q
 ```
 
 ## API
@@ -47,6 +48,7 @@ uvicorn app.main:app --reload
 ```bash
 ruff check .
 pytest -q
+docker build .
 ```
 
 ## Run в Docker
