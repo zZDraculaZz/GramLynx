@@ -24,8 +24,8 @@ def _get_max_body_bytes() -> int:
 
 
 app = FastAPI(title="Text Clean Service", version="0.1.0")
-app.add_middleware(RequestIDMiddleware)
 app.add_middleware(MaxBodySizeMiddleware, max_body_bytes=_get_max_body_bytes())
+app.add_middleware(RequestIDMiddleware)
 app.include_router(router)
 
 if os.getenv("GRAMLYNX_ENABLE_METRICS") == "1":
