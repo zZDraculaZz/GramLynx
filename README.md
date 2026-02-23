@@ -68,6 +68,16 @@ docker run --rm -p 8000:8000 gramlynx:local
 GRAMLYNX_CONFIG_YAML=./config.example.yml uvicorn app.main:app --reload
 ```
 
+## Метрики (опционально)
+
+## YAML-конфигурация (опционально)
+
+Чтобы загрузить правила из YAML, укажите путь в `GRAMLYNX_CONFIG_YAML`:
+
+```bash
+GRAMLYNX_CONFIG_YAML=./config.example.yml uvicorn app.main:app --reload
+```
+
 Если YAML невалидный, сервис не стартует (fail-closed).
 
 Включение Prometheus-метрик:
@@ -77,7 +87,8 @@ GRAMLYNX_ENABLE_METRICS=1 uvicorn app.main:app --reload
 ```
 
 Endpoint метрик: `http://localhost:8000/metrics`.
-Метрики не содержат пользовательский текст.
+Включён gzip-ответ (`should_gzip=True`), если клиент запрашивает `Accept-Encoding: gzip`.
+Пользовательский текст не экспортируется. Примеры метрик: `gramlynx_rollbacks_total`, `gramlynx_pz_spans_total`, `gramlynx_changed_ratio_bucket`, `gramlynx_confidence_bucket`.
 
 Лимит тела запроса задаётся env `GRAMLYNX_MAX_BODY_BYTES` (по умолчанию `1048576`).
 Пример: `GRAMLYNX_MAX_BODY_BYTES=262144 uvicorn app.main:app --reload`.

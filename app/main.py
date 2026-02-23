@@ -41,4 +41,4 @@ app.include_router(router)
 if os.getenv("GRAMLYNX_ENABLE_METRICS") == "1":
     from prometheus_fastapi_instrumentator import Instrumentator
 
-    Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+    Instrumentator().instrument(app).expose(app, endpoint="/metrics", should_gzip=True)
