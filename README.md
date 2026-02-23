@@ -36,7 +36,9 @@ uvicorn app.main:app --reload
 ## Тестирование
 
 ```bash
+ruff check .
 pytest -q
+docker build .
 ```
 
 ## Плагинная система стадий
