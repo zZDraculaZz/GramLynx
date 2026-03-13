@@ -104,6 +104,11 @@ rulepack:
     пофранцузски: по-французски
     пояпонски: по-японски
     попрежнему: по-прежнему
+  enable_candidate_generation_ru: false
+  candidate_backend: none
+  max_candidates_ru: 3
+  max_edit_distance_ru: 1
+  dictionary_source_ru: app/resources/ru_dictionary_v1.txt
   no_touch_strict_ru:
     - ща
     - ваще

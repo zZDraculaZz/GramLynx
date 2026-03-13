@@ -73,6 +73,8 @@ GRAMLYNX_CONFIG_YAML=./config.example.yml uvicorn app.main:app --reload
 RulePack в YAML (`rulepack`) задаёт безопасные детерминированные правки:
 - `typo_map_strict` — более узкий набор замен для strict,
 - `typo_map_smart` — более широкий набор замен для smart,
+- `enable_candidate_generation_ru` + `candidate_backend=rapidfuzz` — консервативный fallback-кандидат только для smart (если `typo_map` не сработал),
+- `max_candidates_ru` / `max_edit_distance_ru` / `dictionary_source_ru` — строгие лимиты candidate generation,
 - `punctuation.fix_space_before/fix_space_after` — механика пробелов вокруг `, . : ; ! ?`.
 
 Включение Prometheus-метрик:
