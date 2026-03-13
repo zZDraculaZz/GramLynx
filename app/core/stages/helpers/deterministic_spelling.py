@@ -77,10 +77,12 @@ def find_rulepack_replacements(
         return []
 
     edits: list[ReplacementEdit] = []
-    pattern = re.compile(r"\b[а-яё]{%d,}\b" % max(min_token_len, 1))
+    pattern = re.compile(r"\b[\w-]{%d,}\b" % max(min_token_len, 1), flags=re.UNICODE)
 
     for match in pattern.finditer(text):
         token = match.group(0)
+        if not _safe_ru_token(token):
+            continue
         if token in allowlist or token in denylist:
             continue
         replacement = typo_map.get(token)
@@ -97,3 +99,18 @@ def find_rulepack_replacements(
 
     edits.sort(key=lambda item: (item.start, item.end))
     return edits
+
+
+def _safe_ru_token(token: str) -> bool:
+    if "-" in token:
+        return False
+    if any(char.isdigit() for char in token):
+        return False
+    has_cyr = any("а" <= ch <= "я" or ch == "ё" or "А" <= ch <= "Я" or ch == "Ё" for ch in token)
+    has_latin = any("a" <= ch.lower() <= "z" for ch in token)
+    if has_latin or not has_cyr:
+        return False
+    # no-touch for name/brand-like tokens
+    if any(ch.isupper() for ch in token):
+        return False
+    return bool(re.fullmatch(r"[а-яё]+", token))

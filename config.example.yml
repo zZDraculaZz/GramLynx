@@ -42,6 +42,18 @@ rulepack:
     оканчяние: окончание
     абажаю: обожаю
     севодня: сегодня
+  typo_map_strict_ru:
+    непревильно: правильно
+  typo_map_smart_ru:
+    непревильно: правильно
+    абажаю: обожаю
+  safe_normalize:
+    collapse_spaces: true
+    trim_line_edges: true
+    collapse_blank_lines: true
   punctuation:
+    fix_space_before: true
+    fix_space_after: true
+  punctuation_spacing_ru:
     fix_space_before: true
     fix_space_after: true

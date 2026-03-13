@@ -74,6 +74,9 @@ class Orchestrator:
             "confidence": None if document.confidence is None else round(document.confidence, 6),
             "rollback_applied": bool(document.audit_log.rollbacks),
             "pz_spans_count": len(document.protected_spans),
+            "normalize_changes_count": document.normalize_changes_count,
+            "typo_corrections_count": document.typo_corrections_count,
+            "punctuation_fixes_count": document.punctuation_fixes_count,
         }
 
         total_ms = (time.time() - start_time) * 1000

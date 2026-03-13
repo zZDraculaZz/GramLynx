@@ -20,7 +20,7 @@ def punct_corrections(context: StageContext) -> None:
 
     text = context.document.working_text
     edits = []
-    punctuation_cfg = load_app_config().rulepack.punctuation
+    punctuation_cfg = load_app_config().rulepack.punctuation_for_mode()
 
     if punctuation_cfg.fix_space_before:
         for match in re.finditer(rf"[ \t\f\v]+([{PUNCT_MARKS}])", text):
@@ -74,6 +74,7 @@ def punct_corrections(context: StageContext) -> None:
     context.document.working_text = text.strip(" \t")
 
     if applied_count > 0:
+        context.document.punctuation_fixes_count += applied_count
         mode = _mode_label(context)
         context.metrics.edits_applied_total[(mode, STAGE_NAME)] = (
             context.metrics.edits_applied_total.get((mode, STAGE_NAME), 0) + applied_count

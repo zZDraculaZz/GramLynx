@@ -10,6 +10,13 @@ from app.core.policy import get_policy
 from app.core.protected_zones.lexicon import get_allowlist, get_denylist
 
 
+@pytest.fixture(autouse=True)
+def _reset_config_cache_between_tests() -> None:
+    reset_app_config_cache()
+    yield
+    reset_app_config_cache()
+
+
 def _reset(monkeypatch) -> None:
     monkeypatch.delenv("GRAMLYNX_CONFIG_YAML", raising=False)
     reset_app_config_cache()
@@ -30,6 +37,16 @@ policies:
 lexicon:
   allowlist: [One, Two]
   denylist: [Bad]
+rulepack:
+  typo_map_strict_ru:
+    непревильно: правильно
+  safe_normalize:
+    collapse_spaces: true
+    trim_line_edges: true
+    collapse_blank_lines: false
+  punctuation_spacing_ru:
+    fix_space_before: false
+    fix_space_after: true
 """,
         encoding="utf-8",
     )
@@ -52,6 +69,9 @@ lexicon:
 
     assert get_allowlist() == {"One", "Two"}
     assert get_denylist() == {"Bad"}
+    assert cfg.rulepack.typo_map_for_mode("strict") == {"непревильно": "правильно"}
+    assert cfg.rulepack.safe_normalize.collapse_blank_lines is False
+    assert cfg.rulepack.punctuation_for_mode().fix_space_before is False
 
 
 def test_invalid_yaml_fails_closed_on_startup(monkeypatch, tmp_path) -> None:
