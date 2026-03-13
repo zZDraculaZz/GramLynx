@@ -35,6 +35,7 @@ def spelling_corrections(context: StageContext) -> None:
         no_touch_prefixes=cfg.no_touch_prefixes_for_mode(mode),
         enable_morph_safety_ru=cfg.enable_morph_safety_ru,
     )
+    _ensure_morph_counters(context)
     context.document.morph_blocked_count += edits.morph_stats.morph_blocked_count
     context.document.morph_allowed_count += edits.morph_stats.morph_allowed_count
     context.document.morph_unknown_count += edits.morph_stats.morph_unknown_count
@@ -123,3 +124,15 @@ def _placeholder_spans(text: str) -> list[tuple[int, int]]:
     for match in re.finditer(r"⟦PZ\d+⟧", text):
         spans.append((match.start(), match.end()))
     return spans
+
+
+def _ensure_morph_counters(context: StageContext) -> None:
+    """Compatibility guard for environments with stale TextDocument shape."""
+
+    document = context.document
+    if not hasattr(document, "morph_blocked_count"):
+        document.morph_blocked_count = 0
+    if not hasattr(document, "morph_allowed_count"):
+        document.morph_allowed_count = 0
+    if not hasattr(document, "morph_unknown_count"):
+        document.morph_unknown_count = 0
