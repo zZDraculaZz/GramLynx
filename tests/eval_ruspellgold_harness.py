@@ -1,6 +1,6 @@
-"""Offline evaluation harness for RU candidate-generation modes.
+"""Offline RU benchmark harness (RuSpellGold-style) for candidate-generation modes.
 
-Runs fixed cases in five modes:
+Runs benchmark cases in five modes:
 - baseline: candidate generation disabled
 - rapidfuzz_shadow: rapidfuzz enabled, shadow (no apply)
 - rapidfuzz_apply: rapidfuzz enabled and applied
@@ -28,90 +28,31 @@ from app.core.orchestrator import Orchestrator
 
 
 @dataclass(frozen=True)
-class EvalCase:
+class BenchmarkCase:
     input_text: str
     expected_clean_text: str
 
 
-FIXED_RU_CASES: tuple[EvalCase, ...] = (
-    # baseline typo-map-covered edits
-    EvalCase("севодня будет встреча", "сегодня будет встреча"),
-    EvalCase("порусски пишу", "по-русски пишу"),
-    EvalCase("попрежнему жду", "по-прежнему жду"),
-    # harder single-token / candidate-only edits (5-10 chars)
-    EvalCase("тишена", "тишина"),
-    EvalCase("калидор", "коридор"),
-    EvalCase("коментарий", "комментарий"),
-    EvalCase("програма", "программа"),
-    EvalCase("однокласник", "одноклассник"),
-    EvalCase("акуратно", "аккуратно"),
-    EvalCase("пакупатель", "покупатель"),
-    EvalCase("превычка", "привычка"),
-    # shorter harder tokens (candidate-only)
-    EvalCase("кат", "кот"),
-    EvalCase("сн", "сон"),
-    EvalCase("кид", "кит"),
-    EvalCase("сор", "сыр"),
-    EvalCase("котт", "кот"),
-    EvalCase("мирр", "мир"),
-    # candidate-only ambiguity / near-tie
-    EvalCase("токин", "токин"),
-    EvalCase("карп", "карп"),
-    # noisy misspellings on edit-distance boundary
-    EvalCase("кар", "кар"),
-    EvalCase("кордор", "кордор"),
-    EvalCase("комментрий", "комментрий"),
-    # morph-sensitive but safe candidate-only block
-    EvalCase("миры", "миры"),
-    EvalCase("мирры", "мирры"),
-    EvalCase("коты", "коты"),
-    # candidate path should be rejected by wrappers / no-touch / safety
-    EvalCase("@кат", "@кат"),
-    EvalCase("#кат", "#кат"),
-    EvalCase("(кат)", "(кат)"),
-    EvalCase('"кат"', '"кат"'),
-    EvalCase("/кат/", "/кат/"),
-    EvalCase("token:кат", "token:кат"),
-    EvalCase("кат_ключ", "кат_ключ"),
-    EvalCase("кaт", "кaт"),
-    EvalCase("кат123", "кат123"),
-    EvalCase("КаТ", "КаТ"),
-    EvalCase("кот2", "кот2"),
-    # protected-zone classes (including near-PZ-like adjacency)
-    EvalCase("https://example.com кат", "https://example.com кот"),
-    EvalCase("кат https://example.com", "кот https://example.com"),
-    EvalCase("катhttps://example.com", "катhttps://example.com"),
-    EvalCase("(https://example.com):кат", "(https://example.com):кат"),
-    EvalCase("mail user@mail.example кат", "mail user@mail.example кот"),
-    EvalCase("кат 550e8400-e29b-41d4-a716-446655440000", "кот 550e8400-e29b-41d4-a716-446655440000"),
-)
+DEFAULT_BENCHMARK_PATH = Path(__file__).resolve().parent / "cases" / "ruspellgold_benchmark.jsonl"
 
-
-# Deliberately ordered to make symspell frequency ranking differ from rapidfuzz tie handling.
+# Deterministic dictionary for benchmark-mode candidate evaluation.
 EVAL_DICTIONARY_WORDS: tuple[str, ...] = (
-    "тишина",
-    "коридор",
+    "сегодня",
+    "по-русски",
+    "по-прежнему",
     "комментарий",
     "программа",
-    "одноклассник",
     "аккуратно",
+    "коридор",
     "покупатель",
-    "привычка",
+    "тишина",
     "кот",
-    "коты",
     "кит",
+    "сон",
     "сыр",
     "мир",
-    "миры",
-    "сон",
-    "код",
     "токен",
     "токан",
-    "карп",
-    "кар",
-    "карта",
-    "соня",
-    "сани",
 )
 
 
@@ -132,7 +73,41 @@ rulepack:
   typo_map_smart_ru: {{}}
   no_touch_prefixes_ru:
     - "@"
+    - "#"
 """
+
+
+def _load_benchmark_cases() -> tuple[BenchmarkCase, ...]:
+    source = os.environ.get("GRAMLYNX_RUSPELLGOLD_PATH", "").strip()
+    path = Path(source) if source else DEFAULT_BENCHMARK_PATH
+    if not path.exists():
+        raise FileNotFoundError(f"benchmark dataset not found: {path}")
+
+    cases: list[BenchmarkCase] = []
+    for index, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        row = line.strip()
+        if not row:
+            continue
+        try:
+            payload = json.loads(row)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"invalid benchmark row at line {index}") from exc
+
+        if not isinstance(payload, dict):
+            raise ValueError(f"invalid benchmark row type at line {index}")
+
+        input_text = payload.get("input_text")
+        expected_clean_text = payload.get("expected_clean_text")
+        if not isinstance(input_text, str) or not isinstance(expected_clean_text, str):
+            raise ValueError(f"invalid benchmark schema at line {index}")
+        if not input_text:
+            raise ValueError(f"empty input_text at line {index}")
+
+        cases.append(BenchmarkCase(input_text=input_text, expected_clean_text=expected_clean_text))
+
+    if not cases:
+        raise ValueError("benchmark dataset is empty")
+    return tuple(cases)
 
 
 def _ensure_backend_available(backend: str) -> None:
@@ -168,10 +143,12 @@ def evaluate_mode(mode_label: str) -> dict[str, float | int]:
 
     _ensure_backend_available(backend)
 
-    dictionary_path = Path(tempfile.gettempdir()) / "gramlynx_candidate_eval_dictionary.txt"
+    benchmark_cases = _load_benchmark_cases()
+
+    dictionary_path = Path(tempfile.gettempdir()) / "gramlynx_ruspellgold_eval_dictionary.txt"
     dictionary_path.write_text("\n".join(EVAL_DICTIONARY_WORDS) + "\n", encoding="utf-8")
 
-    cfg_path = Path(tempfile.gettempdir()) / f"gramlynx_candidate_eval_{mode_label}.yml"
+    cfg_path = Path(tempfile.gettempdir()) / f"gramlynx_ruspellgold_eval_{mode_label}.yml"
     cfg_path.write_text(
         _runtime_config(candidate_enabled, shadow_mode, backend, str(dictionary_path)),
         encoding="utf-8",
@@ -195,8 +172,8 @@ def evaluate_mode(mode_label: str) -> dict[str, float | int]:
         rollback_total = 0
         exact_match_pass_count = 0
 
-        for index, case in enumerate(FIXED_RU_CASES):
-            orchestrator = Orchestrator(correlation_id=f"candidate-eval-{mode_label}-{index}")
+        for index, case in enumerate(benchmark_cases):
+            orchestrator = Orchestrator(correlation_id=f"ruspellgold-eval-{mode_label}-{index}")
             with contextlib.redirect_stdout(io.StringIO()):
                 clean_text = orchestrator.clean(case.input_text, mode="smart")
             stats = orchestrator.last_run_stats
@@ -214,24 +191,24 @@ def evaluate_mode(mode_label: str) -> dict[str, float | int]:
             rollback_total += int(bool(stats.get("rollback_applied", False)))
             exact_match_pass_count += int(clean_text == case.expected_clean_text)
 
-        total_cases = len(FIXED_RU_CASES)
+        total_cases = len(benchmark_cases)
         exact_match_pass_rate = (exact_match_pass_count / total_cases) if total_cases else 0.0
 
         return {
             "total_cases": total_cases,
+            "exact_match_pass_count": exact_match_pass_count,
+            "exact_match_pass_rate": round(exact_match_pass_rate, 6),
             "candidate_generated_total": candidate_generated_total,
             "candidate_applied_total": candidate_applied_total,
             "candidate_rejected_total": candidate_rejected_total,
-            "candidate_ambiguous_total": candidate_ambiguous_total,
             "candidate_rejected_no_result_total": candidate_rejected_no_result_total,
             "candidate_rejected_unsafe_candidate_total": candidate_rejected_unsafe_candidate_total,
             "candidate_rejected_morph_blocked_total": candidate_rejected_morph_blocked_total,
             "candidate_rejected_morph_unknown_total": candidate_rejected_morph_unknown_total,
+            "candidate_ambiguous_total": candidate_ambiguous_total,
             "candidate_ambiguous_tie_total": candidate_ambiguous_tie_total,
             "candidate_shadow_skipped_total": candidate_shadow_skipped_total,
             "rollback_total": rollback_total,
-            "exact_match_pass_count": exact_match_pass_count,
-            "exact_match_pass_rate": round(exact_match_pass_rate, 6),
         }
     finally:
         if prev is None:

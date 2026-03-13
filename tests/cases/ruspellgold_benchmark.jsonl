@@ -1,0 +1,15 @@
+{"input_text":"севодня будет дождь","expected_clean_text":"сегодня будет дождь"}
+{"input_text":"порусски пишу","expected_clean_text":"по-русски пишу"}
+{"input_text":"попрежнему жду","expected_clean_text":"по-прежнему жду"}
+{"input_text":"коментарий принят","expected_clean_text":"комментарий принят"}
+{"input_text":"програма обновлена","expected_clean_text":"программа обновлена"}
+{"input_text":"акуратно сложи","expected_clean_text":"аккуратно сложи"}
+{"input_text":"калидор пуст","expected_clean_text":"коридор пуст"}
+{"input_text":"@севодня","expected_clean_text":"@севодня"}
+{"input_text":"#севодня","expected_clean_text":"#севодня"}
+{"input_text":"(севодня)","expected_clean_text":"(севодня)"}
+{"input_text":"\"севодня\"","expected_clean_text":"\"севодня\""}
+{"input_text":"кaт","expected_clean_text":"кaт"}
+{"input_text":"кат123","expected_clean_text":"кат123"}
+{"input_text":"https://example.com севодня","expected_clean_text":"https://example.com сегодня"}
+{"input_text":"севодня https://example.com","expected_clean_text":"сегодня https://example.com"}
