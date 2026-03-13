@@ -176,3 +176,19 @@ def test_candidate_eval_baseline_still_works_without_backend_dependencies(monkey
     monkeypatch.setattr(candidate_harness.importlib.util, "find_spec", lambda name: None)
     stats = evaluate_mode("baseline")
     assert int(stats["total_cases"]) == len(FIXED_RU_CASES)
+
+
+def test_candidate_eval_symspell_v3_improves_over_v2_dictionary(monkeypatch) -> None:
+    if not SYMSPELL_AVAILABLE:
+        pytest.skip("symspellpy is not available")
+
+    monkeypatch.setenv("GRAMLYNX_EVAL_DICTIONARY_SOURCE_RU", "app/resources/ru_dictionary_v2.txt")
+    v2 = evaluate_mode("symspell_apply")
+
+    monkeypatch.setenv("GRAMLYNX_EVAL_DICTIONARY_SOURCE_RU", "app/resources/ru_dictionary_v3.txt")
+    v3 = evaluate_mode("symspell_apply")
+
+    assert int(v3["candidate_rejected_no_result_total"]) < int(v2["candidate_rejected_no_result_total"])
+    assert float(v3["exact_match_pass_rate"]) >= float(v2["exact_match_pass_rate"])
+    assert int(v3["rollback_total"]) == 0
+    assert int(v3["candidate_rejected_unsafe_candidate_total"]) == 0

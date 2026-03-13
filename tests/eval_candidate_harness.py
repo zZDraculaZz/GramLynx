@@ -27,6 +27,9 @@ from app.core.config import reset_app_config_cache
 from app.core.orchestrator import Orchestrator
 
 
+DEFAULT_EVAL_DICTIONARY_SOURCE = "app/resources/ru_dictionary_v3.txt"
+
+
 @dataclass(frozen=True)
 class EvalCase:
     input_text: str
@@ -115,6 +118,13 @@ EVAL_DICTIONARY_WORDS: tuple[str, ...] = (
 )
 
 
+def _resolve_eval_dictionary_source() -> str:
+    source = os.environ.get("GRAMLYNX_EVAL_DICTIONARY_SOURCE_RU", "").strip()
+    if source:
+        return source
+    return DEFAULT_EVAL_DICTIONARY_SOURCE
+
+
 def _runtime_config(candidate_enabled: bool, shadow_mode: bool, backend: str, dictionary_source: str) -> str:
     return f"""
 policies:
@@ -168,12 +178,11 @@ def evaluate_mode(mode_label: str) -> dict[str, float | int]:
 
     _ensure_backend_available(backend)
 
-    dictionary_path = Path(tempfile.gettempdir()) / "gramlynx_candidate_eval_dictionary.txt"
-    dictionary_path.write_text("\n".join(EVAL_DICTIONARY_WORDS) + "\n", encoding="utf-8")
+    dictionary_source = _resolve_eval_dictionary_source()
 
     cfg_path = Path(tempfile.gettempdir()) / f"gramlynx_candidate_eval_{mode_label}.yml"
     cfg_path.write_text(
-        _runtime_config(candidate_enabled, shadow_mode, backend, str(dictionary_path)),
+        _runtime_config(candidate_enabled, shadow_mode, backend, dictionary_source),
         encoding="utf-8",
     )
 

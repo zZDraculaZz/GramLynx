@@ -155,3 +155,43 @@ def test_ruspellgold_baseline_still_works_without_backend_dependencies(monkeypat
     monkeypatch.setattr(ruspellgold_harness.importlib.util, "find_spec", lambda name: None)
     stats = evaluate_mode("baseline")
     assert int(stats["total_cases"]) > 0
+
+
+def test_ruspellgold_symspell_v3_improves_over_v2_dictionary(monkeypatch) -> None:
+    if not SYMSPELL_AVAILABLE:
+        pytest.skip("symspellpy is not available")
+
+    monkeypatch.setenv("GRAMLYNX_EVAL_DICTIONARY_SOURCE_RU", "app/resources/ru_dictionary_v2.txt")
+    v2 = evaluate_mode("symspell_apply")
+
+    monkeypatch.setenv("GRAMLYNX_EVAL_DICTIONARY_SOURCE_RU", "app/resources/ru_dictionary_v3.txt")
+    v3 = evaluate_mode("symspell_apply")
+
+    assert int(v3["candidate_rejected_no_result_total"]) < int(v2["candidate_rejected_no_result_total"])
+    assert float(v3["exact_match_pass_rate"]) >= float(v2["exact_match_pass_rate"])
+    assert int(v3["rollback_total"]) == 0
+    assert int(v3["candidate_rejected_unsafe_candidate_total"]) == 0
+
+
+def test_ruspellgold_backend_comparison_signal_is_informative() -> None:
+    if not ALL_BACKENDS_AVAILABLE:
+        with pytest.raises(RuntimeError):
+            evaluate_mode("rapidfuzz_apply")
+        with pytest.raises(RuntimeError):
+            evaluate_mode("symspell_apply")
+        return
+
+    rapidfuzz_apply = evaluate_mode("rapidfuzz_apply")
+    symspell_apply = evaluate_mode("symspell_apply")
+
+    # Expanded benchmark should produce non-trivial candidate activity in both backends.
+    assert int(rapidfuzz_apply["candidate_generated_total"]) > 0
+    assert int(symspell_apply["candidate_generated_total"]) > 0
+
+    # Backend profiles should differ on at least one diagnostic bucket.
+    assert (
+        int(rapidfuzz_apply["candidate_ambiguous_total"]) != int(symspell_apply["candidate_ambiguous_total"])
+        or int(rapidfuzz_apply["candidate_generated_total"]) != int(symspell_apply["candidate_generated_total"])
+        or int(rapidfuzz_apply["candidate_applied_total"]) != int(symspell_apply["candidate_applied_total"])
+        or int(rapidfuzz_apply["exact_match_pass_count"]) != int(symspell_apply["exact_match_pass_count"])
+    )
