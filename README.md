@@ -70,6 +70,7 @@ python tests/eval_ruspellgold_harness.py
 ```
 
 Можно переопределить путь к benchmark dataset через `GRAMLYNX_RUSPELLGOLD_PATH` (JSONL).
+Если выбран backend `rapidfuzz`/`symspell`, а зависимость отсутствует, harness завершится fail-closed ошибкой.
 
 ## Метрики (опционально)
 

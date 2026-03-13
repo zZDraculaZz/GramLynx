@@ -12,6 +12,7 @@ Outputs only aggregated numeric stats.
 from __future__ import annotations
 
 import contextlib
+import importlib.util
 import io
 import json
 import os
@@ -134,6 +135,13 @@ rulepack:
 """
 
 
+def _ensure_backend_available(backend: str) -> None:
+    if backend == "rapidfuzz" and importlib.util.find_spec("rapidfuzz") is None:
+        raise RuntimeError("candidate backend unavailable: rapidfuzz is not installed")
+    if backend == "symspell" and importlib.util.find_spec("symspellpy") is None:
+        raise RuntimeError("candidate backend unavailable: symspellpy is not installed")
+
+
 def evaluate_mode(mode_label: str) -> dict[str, float | int]:
     if mode_label == "baseline":
         candidate_enabled = False
@@ -157,6 +165,8 @@ def evaluate_mode(mode_label: str) -> dict[str, float | int]:
         backend = "symspell"
     else:
         raise ValueError(f"unknown mode_label: {mode_label}")
+
+    _ensure_backend_available(backend)
 
     dictionary_path = Path(tempfile.gettempdir()) / "gramlynx_candidate_eval_dictionary.txt"
     dictionary_path.write_text("\n".join(EVAL_DICTIONARY_WORDS) + "\n", encoding="utf-8")
