@@ -10,7 +10,16 @@ from app.core.protected_zones.detector import (
     placeholders_intact,
     restore_protected_zones,
 )
+from app.core.prom_metrics import observe_rollback
 from app.core.stages.base import StageContext
+
+
+
+
+def _policy_mode(context: StageContext) -> str:
+    """Infer mode label from active policy."""
+
+    return "smart" if context.policy.allow_punct_stage else "strict"
 
 
 def guardrails_check(context: StageContext) -> None:
@@ -26,6 +35,7 @@ def guardrails_check(context: StageContext) -> None:
 
     if not placeholders_ok or not ratio_ok or not edits_ok:
         _rollback_to_snapshot(context)
+        observe_rollback(mode=_policy_mode(context))
         if not placeholders_ok:
             document.audit_log.rollbacks.append("placeholders_missing")
         if not ratio_ok:
@@ -45,6 +55,7 @@ def final_guardrails_check(context: StageContext) -> None:
 
     if not no_placeholders or not originals_ok or not detector_ok:
         _rollback_to_snapshot(context)
+        observe_rollback(mode=_policy_mode(context))
         if not no_placeholders:
             document.audit_log.rollbacks.append("placeholders_left")
         if not originals_ok:

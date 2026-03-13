@@ -4,6 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List
 
+from app.core.config import load_app_config
+
 
 @dataclass(frozen=True)
 class PolicyConfig:
@@ -53,9 +55,34 @@ SMART_POLICY = PolicyConfig(
 )
 
 
+def _apply_overrides(base: PolicyConfig, mode: str) -> PolicyConfig:
+    cfg = load_app_config()
+    policy_override = cfg.policies.smart if mode == "smart" else cfg.policies.strict
+
+    return PolicyConfig(
+        enabled_stages=policy_override.enabled_stages or list(base.enabled_stages),
+        max_edits_per_sentence=base.max_edits_per_sentence,
+        max_edits_total=base.max_edits_total,
+        max_changed_char_ratio=(
+            policy_override.max_changed_char_ratio
+            if policy_override.max_changed_char_ratio is not None
+            else base.max_changed_char_ratio
+        ),
+        min_confidence_per_edit=base.min_confidence_per_edit,
+        min_confidence_overall=base.min_confidence_overall,
+        allow_punct_stage=base.allow_punct_stage,
+        language_gate_thresholds=base.language_gate_thresholds,
+        pz_buffer_chars=(
+            policy_override.pz_buffer_chars
+            if policy_override.pz_buffer_chars is not None
+            else base.pz_buffer_chars
+        ),
+    )
+
+
 def get_policy(mode: str) -> PolicyConfig:
     """Возвращает конфиг политики по режиму."""
 
     if mode == "smart":
-        return SMART_POLICY
-    return STRICT_POLICY
+        return _apply_overrides(SMART_POLICY, mode="smart")
+    return _apply_overrides(STRICT_POLICY, mode="strict")

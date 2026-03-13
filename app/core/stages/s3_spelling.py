@@ -3,21 +3,45 @@ from __future__ import annotations
 
 import re
 
+from app.core.config import load_app_config
 from app.core.model import Edit
+from app.core.observability import log_event
+from app.core.prom_metrics import observe_corrections_applied
+from app.core.protected_zones.lexicon import get_allowlist, get_denylist
 from app.core.stages.base import StageContext
-from app.core.stages.helpers.deterministic_spelling import find_replacements
+from app.core.stages.helpers.deterministic_spelling import (
+    find_replacements,
+    find_rulepack_replacements,
+)
+
+STAGE_NAME = "s3_spelling"
 
 
 def spelling_corrections(context: StageContext) -> None:
     """Применяет только детерминированные замены вне Protected Zones."""
 
     text = context.document.working_text
-    edits = find_replacements(text)
+    cfg = load_app_config().rulepack
+    typo_map = cfg.typo_map_smart if context.policy.allow_punct_stage else cfg.typo_map_strict
+
+    edits = find_rulepack_replacements(
+        text=text,
+        typo_map=typo_map,
+        min_token_len=cfg.typo_min_token_len,
+        allowlist=get_allowlist(),
+        denylist=get_denylist(),
+    )
+
+    # backward compatibility for built-in deterministic fixes when no YAML map configured
+    if not edits and not typo_map:
+        edits = find_replacements(text)
+
     if not edits:
         return
 
     offset = 0
     last_end = -1
+    applied_count = 0
     for edit in edits:
         if edit.start < last_end:
             continue
@@ -32,7 +56,7 @@ def spelling_corrections(context: StageContext) -> None:
                     after=edit.after,
                     edit_type="spelling",
                     confidence=1.0,
-                    stage="s3_spelling",
+                    stage=STAGE_NAME,
                     safe_reason="blocked_near_protected_zone",
                 )
             )
@@ -40,6 +64,7 @@ def spelling_corrections(context: StageContext) -> None:
         text = text[:current_start] + edit.after + text[current_end:]
         offset += len(edit.after) - len(edit.before)
         last_end = edit.end
+        applied_count += 1
         context.document.audit_log.applied_edits.append(
             Edit(
                 start=current_start,
@@ -48,11 +73,29 @@ def spelling_corrections(context: StageContext) -> None:
                 after=edit.after,
                 edit_type="spelling",
                 confidence=1.0,
-                stage="s3_spelling",
+                stage=STAGE_NAME,
                 safe_reason="deterministic_replacement",
             )
         )
     context.document.working_text = text
+
+    if applied_count > 0:
+        mode = _mode_label(context)
+        context.metrics.edits_applied_total[(mode, STAGE_NAME)] = (
+            context.metrics.edits_applied_total.get((mode, STAGE_NAME), 0) + applied_count
+        )
+        observe_corrections_applied(mode=mode, stage=STAGE_NAME, count=applied_count)
+        log_event(
+            event="stage_corrections_applied",
+            correlation_id=context.correlation_id,
+            mode=mode,
+            stage=STAGE_NAME,
+            corrections_applied=applied_count,
+        )
+
+
+def _mode_label(context: StageContext) -> str:
+    return "smart" if context.policy.allow_punct_stage else "strict"
 
 
 def _edit_allowed(context: StageContext, start: int, end: int) -> bool:

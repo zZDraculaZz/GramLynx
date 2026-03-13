@@ -3,8 +3,16 @@ from __future__ import annotations
 
 import re
 
+from app.core.config import load_app_config
 from app.core.model import Edit
+from app.core.observability import log_event
+from app.core.prom_metrics import observe_corrections_applied
 from app.core.stages.base import StageContext
+
+
+PUNCT_MARKS = r",\.:;!?"
+LETTER_AFTER_PUNCT = r"[A-Za-zА-Яа-яЁё]"
+STAGE_NAME = "s5_punct"
 
 
 def punct_corrections(context: StageContext) -> None:
@@ -12,19 +20,23 @@ def punct_corrections(context: StageContext) -> None:
 
     text = context.document.working_text
     edits = []
+    punctuation_cfg = load_app_config().rulepack.punctuation
 
-    for match in re.finditer(r"[ \t\f\v]+([,!?;:.])", text):
-        before = match.group(0)
-        after = match.group(1)
-        edits.append((match.start(), match.end(), before, after))
+    if punctuation_cfg.fix_space_before:
+        for match in re.finditer(rf"[ \t\f\v]+([{PUNCT_MARKS}])", text):
+            before = match.group(0)
+            after = match.group(1)
+            edits.append((match.start(), match.end(), before, after))
 
-    for match in re.finditer(r"([,!?;:.])(?=[^\s\n,!?;:.])", text):
-        before = match.group(1)
-        after = f"{before} "
-        edits.append((match.start(), match.end(), before, after))
+    if punctuation_cfg.fix_space_after:
+        for match in re.finditer(rf"([{PUNCT_MARKS}])(?={LETTER_AFTER_PUNCT})", text):
+            before = match.group(1)
+            after = f"{before} "
+            edits.append((match.start(), match.end(), before, after))
 
     edits.sort(key=lambda item: item[0])
     offset = 0
+    applied_count = 0
     for start, end, before, after in edits:
         current_start = start + offset
         current_end = end + offset
@@ -37,13 +49,14 @@ def punct_corrections(context: StageContext) -> None:
                     after=after,
                     edit_type="punct",
                     confidence=1.0,
-                    stage="s5_punct",
+                    stage=STAGE_NAME,
                     safe_reason="blocked_near_protected_zone",
                 )
             )
             continue
         text = text[:current_start] + after + text[current_end:]
         offset += len(after) - len(before)
+        applied_count += 1
         context.document.audit_log.applied_edits.append(
             Edit(
                 start=current_start,
@@ -52,13 +65,31 @@ def punct_corrections(context: StageContext) -> None:
                 after=after,
                 edit_type="punct",
                 confidence=1.0,
-                stage="s5_punct",
+                stage=STAGE_NAME,
                 safe_reason="whitespace_punct",
             )
         )
 
     text = re.sub(r"[ \t\f\v]+", " ", text)
     context.document.working_text = text.strip(" \t")
+
+    if applied_count > 0:
+        mode = _mode_label(context)
+        context.metrics.edits_applied_total[(mode, STAGE_NAME)] = (
+            context.metrics.edits_applied_total.get((mode, STAGE_NAME), 0) + applied_count
+        )
+        observe_corrections_applied(mode=mode, stage=STAGE_NAME, count=applied_count)
+        log_event(
+            event="stage_corrections_applied",
+            correlation_id=context.correlation_id,
+            mode=mode,
+            stage=STAGE_NAME,
+            corrections_applied=applied_count,
+        )
+
+
+def _mode_label(context: StageContext) -> str:
+    return "smart" if context.policy.allow_punct_stage else "strict"
 
 
 def _edit_allowed(context: StageContext, start: int, end: int) -> bool:

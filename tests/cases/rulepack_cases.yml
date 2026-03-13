@@ -1,0 +1,61 @@
+strict:
+  - input: "это непревильно"
+    expected_clean_text: "это правильно"
+
+  - input: "Это Непревильно"
+    expected_clean_text: "Это Непревильно"
+
+  - input: "ПРИВЕТ НЕПРЕВИЛЬНО"
+    expected_clean_text: "ПРИВЕТ НЕПРЕВИЛЬНО"
+
+  - input: "uuid 550e8400-e29b-41d4-a716-446655440000 непревильно"
+    expected_clean_text: "uuid 550e8400-e29b-41d4-a716-446655440000 непревильно"
+
+  - input: "ссылка https://example.com непревильно"
+    expected_clean_text: "ссылка https://example.com непревильно"
+
+  - input: "почта user@mail.example непревильно"
+    expected_clean_text: "почта user@mail.example непревильно"
+
+  - input: "число 12345 непревильно"
+    expected_clean_text: "число 12345 непревильно"
+
+  - input: "слово ,слово"
+    expected_clean_text: "слово ,слово"
+
+  - input: "слово , слово"
+    expected_clean_text: "слово , слово"
+
+smart:
+  - input: "это непревильно"
+    expected_clean_text: "это правильно"
+
+  - input: "это абажаю"
+    expected_clean_text: "это обожаю"
+
+  - input: "Это Непревильно"
+    expected_clean_text: "Это Непревильно"
+
+  - input: "ПРИВЕТ НЕПРЕВИЛЬНО"
+    expected_clean_text: "ПРИВЕТ НЕПРЕВИЛЬНО"
+
+  - input: "смешанный непревильноt3st"
+    expected_clean_text: "смешанный непревильноt3st"
+
+  - input: "рядом https://example.com/непревильно"
+    expected_clean_text: "рядом https://example.com/непревильно"
+
+  - input: "рядом userнепревильно@mail.example"
+    expected_clean_text: "рядом userнепревильно@mail.example"
+
+  - input: "рядом 550e8400-e29b-41d4-a716-446655440000непревильно"
+    expected_clean_text: "рядом 550e8400-e29b-41d4-a716-446655440000непревильно"
+
+  - input: "рядом 12345непревильно"
+    expected_clean_text: "рядом 12345непревильно"
+
+  - input: "слово ,слово"
+    expected_clean_text: "слово, слово"
+
+  - input: "слово , слово"
+    expected_clean_text: "слово, слово"
