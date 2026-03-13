@@ -31,19 +31,27 @@ def spelling_corrections(context: StageContext) -> None:
         min_token_len=cfg.typo_min_token_len,
         allowlist=get_allowlist(),
         denylist=get_denylist(),
+        no_touch_tokens=cfg.no_touch_for_mode(mode),
+        no_touch_prefixes=cfg.no_touch_prefixes_for_mode(mode),
+        enable_morph_safety_ru=cfg.enable_morph_safety_ru,
     )
+    _ensure_morph_counters(context)
+    context.document.morph_blocked_count += edits.morph_stats.morph_blocked_count
+    context.document.morph_allowed_count += edits.morph_stats.morph_allowed_count
+    context.document.morph_unknown_count += edits.morph_stats.morph_unknown_count
+    edits_list = edits.edits
 
     # backward compatibility for built-in deterministic fixes when no YAML map configured
-    if not edits and not typo_map:
-        edits = find_replacements(text)
+    if not edits_list and not typo_map:
+        edits_list = find_replacements(text)
 
-    if not edits:
+    if not edits_list:
         return
 
     offset = 0
     last_end = -1
     applied_count = 0
-    for edit in edits:
+    for edit in edits_list:
         if edit.start < last_end:
             continue
         current_start = edit.start + offset
@@ -116,3 +124,15 @@ def _placeholder_spans(text: str) -> list[tuple[int, int]]:
     for match in re.finditer(r"⟦PZ\d+⟧", text):
         spans.append((match.start(), match.end()))
     return spans
+
+
+def _ensure_morph_counters(context: StageContext) -> None:
+    """Compatibility guard for environments with stale TextDocument shape."""
+
+    document = context.document
+    if not hasattr(document, "morph_blocked_count"):
+        document.morph_blocked_count = 0
+    if not hasattr(document, "morph_allowed_count"):
+        document.morph_allowed_count = 0
+    if not hasattr(document, "morph_unknown_count"):
+        document.morph_unknown_count = 0

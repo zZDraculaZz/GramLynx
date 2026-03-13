@@ -76,7 +76,11 @@ class RulepackConfig(BaseModel):
     typo_map_smart: dict[str, str] = Field(default_factory=dict)
     typo_map_strict_ru: dict[str, str] = Field(default_factory=dict)
     typo_map_smart_ru: dict[str, str] = Field(default_factory=dict)
+    no_touch_strict_ru: list[str] = Field(default_factory=list)
+    no_touch_smart_ru: list[str] = Field(default_factory=list)
+    no_touch_prefixes_ru: list[str] = Field(default_factory=list)
     typo_min_token_len: int = Field(default=4, ge=1)
+    enable_morph_safety_ru: bool = False
     safe_normalize: RulepackSafeNormalizeConfig = Field(default_factory=RulepackSafeNormalizeConfig)
     punctuation: RulepackPunctuationConfig = Field(default_factory=RulepackPunctuationConfig)
     punctuation_spacing_ru: RulepackPunctuationSpacingRuConfig = Field(
@@ -87,6 +91,17 @@ class RulepackConfig(BaseModel):
         if mode == "smart":
             return self.typo_map_smart_ru or self.typo_map_smart
         return self.typo_map_strict_ru or self.typo_map_strict
+
+    def no_touch_for_mode(self, mode: str) -> set[str]:
+        if mode == "smart":
+            base = self.no_touch_smart_ru or self.no_touch_strict_ru
+        else:
+            base = self.no_touch_strict_ru
+        return {token for token in base if token}
+
+    def no_touch_prefixes_for_mode(self, mode: str) -> tuple[str, ...]:
+        _ = mode
+        return tuple(prefix for prefix in self.no_touch_prefixes_ru if prefix)
 
     def punctuation_for_mode(self) -> RulepackPunctuationSpacingRuConfig:
         if (

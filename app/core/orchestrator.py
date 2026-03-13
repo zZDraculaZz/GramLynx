@@ -77,6 +77,9 @@ class Orchestrator:
             "normalize_changes_count": document.normalize_changes_count,
             "typo_corrections_count": document.typo_corrections_count,
             "punctuation_fixes_count": document.punctuation_fixes_count,
+            "morph_blocked_count": getattr(document, "morph_blocked_count", 0),
+            "morph_allowed_count": getattr(document, "morph_allowed_count", 0),
+            "morph_unknown_count": getattr(document, "morph_unknown_count", 0),
         }
 
         total_ms = (time.time() - start_time) * 1000
