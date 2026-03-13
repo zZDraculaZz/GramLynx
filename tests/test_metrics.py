@@ -18,11 +18,29 @@ def _build_client(monkeypatch, enabled: bool) -> TestClient:
     return TestClient(reloaded.app)
 
 
-def test_metrics_enabled_exposes_endpoint(monkeypatch) -> None:
+def test_metrics_enabled_exposes_endpoint(monkeypatch, tmp_path) -> None:
+    dictionary = tmp_path / "dict.txt"
+    dictionary.write_text("сегодня\n", encoding="utf-8")
+    cfg = tmp_path / "metrics_rulepack.yml"
+    cfg.write_text(
+        f"""
+policies:
+  smart:
+    enabled_stages: [s1_normalize, s2_segment, s3_spelling, s6_guardrails, s7_assemble]
+    max_changed_char_ratio: 1.0
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_backend: rapidfuzz
+  dictionary_source_ru: {dictionary}
+  typo_map_smart_ru: {{}}
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(cfg))
     client = _build_client(monkeypatch, enabled=True)
 
     # Generate some metric activity first.
-    client.post("/clean", json={"text": "A,B,C,D,E", "mode": "smart"})
+    client.post("/clean", json={"text": "севодня", "mode": "smart"})
     client.post("/clean", json={"text": "Ссылка: https://example.com", "mode": "strict"})
 
     response = client.get("/metrics")
@@ -32,6 +50,16 @@ def test_metrics_enabled_exposes_endpoint(monkeypatch) -> None:
     assert "http_request" in body
     assert "gramlynx_rollbacks_total" in body
     assert "gramlynx_pz_spans_total" in body
+    assert "gramlynx_candidate_generated_total" in body
+    assert "gramlynx_candidate_applied_total" in body
+    assert "gramlynx_candidate_rejected_total" in body
+    assert "gramlynx_candidate_ambiguous_total" in body
+    assert "gramlynx_candidate_rejected_no_result_total" in body
+    assert "gramlynx_candidate_rejected_unsafe_candidate_total" in body
+    assert "gramlynx_candidate_rejected_morph_blocked_total" in body
+    assert "gramlynx_candidate_rejected_morph_unknown_total" in body
+    assert "gramlynx_candidate_ambiguous_tie_total" in body
+    assert "gramlynx_candidate_shadow_skipped_total" in body
 
 
 def test_metrics_disabled_returns_404(monkeypatch) -> None:

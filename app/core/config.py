@@ -81,6 +81,12 @@ class RulepackConfig(BaseModel):
     no_touch_prefixes_ru: list[str] = Field(default_factory=list)
     typo_min_token_len: int = Field(default=4, ge=1)
     enable_morph_safety_ru: bool = False
+    enable_candidate_generation_ru: bool = False
+    candidate_shadow_mode_ru: bool = False
+    candidate_backend: str = "none"
+    max_candidates_ru: int = Field(default=3, ge=1, le=10)
+    max_edit_distance_ru: int = Field(default=1, ge=1, le=2)
+    dictionary_source_ru: str = ""
     safe_normalize: RulepackSafeNormalizeConfig = Field(default_factory=RulepackSafeNormalizeConfig)
     punctuation: RulepackPunctuationConfig = Field(default_factory=RulepackPunctuationConfig)
     punctuation_spacing_ru: RulepackPunctuationSpacingRuConfig = Field(
