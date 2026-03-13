@@ -107,6 +107,7 @@ def find_rulepack_replacements(
     no_touch_prefixes: tuple[str, ...] = (),
     enable_morph_safety_ru: bool = False,
     enable_candidate_generation_ru: bool = False,
+    candidate_shadow_mode_ru: bool = False,
     candidate_backend: str = "none",
     max_candidates_ru: int = 3,
     max_edit_distance_ru: int = 1,
@@ -187,6 +188,9 @@ def find_rulepack_replacements(
                 if from_generator:
                     candidate_rejected_count += 1
                 continue
+
+        if from_generator and candidate_shadow_mode_ru:
+            continue
 
         edits.append(
             ReplacementEdit(

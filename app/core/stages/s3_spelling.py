@@ -6,7 +6,7 @@ import re
 from app.core.config import load_app_config
 from app.core.model import Edit
 from app.core.observability import log_event
-from app.core.prom_metrics import observe_corrections_applied
+from app.core.prom_metrics import observe_candidate_stats, observe_corrections_applied
 from app.core.protected_zones.lexicon import get_allowlist, get_denylist
 from app.core.stages.base import StageContext
 from app.core.stages.helpers.deterministic_spelling import (
@@ -35,6 +35,7 @@ def spelling_corrections(context: StageContext) -> None:
         no_touch_prefixes=cfg.no_touch_prefixes_for_mode(mode),
         enable_morph_safety_ru=cfg.enable_morph_safety_ru,
         enable_candidate_generation_ru=(mode == "smart" and cfg.enable_candidate_generation_ru),
+        candidate_shadow_mode_ru=cfg.candidate_shadow_mode_ru,
         candidate_backend=cfg.candidate_backend,
         max_candidates_ru=cfg.max_candidates_ru,
         max_edit_distance_ru=cfg.max_edit_distance_ru,
@@ -48,6 +49,14 @@ def spelling_corrections(context: StageContext) -> None:
     context.document.candidate_applied_count += edits.candidate_stats.candidate_applied_count
     context.document.candidate_rejected_count += edits.candidate_stats.candidate_rejected_count
     context.document.candidate_ambiguous_count += edits.candidate_stats.candidate_ambiguous_count
+    observe_candidate_stats(
+        mode=mode,
+        backend=cfg.candidate_backend,
+        generated=edits.candidate_stats.candidate_generated_count,
+        applied=edits.candidate_stats.candidate_applied_count,
+        rejected=edits.candidate_stats.candidate_rejected_count,
+        ambiguous=edits.candidate_stats.candidate_ambiguous_count,
+    )
     edits_list = edits.edits
 
     # backward compatibility for built-in deterministic fixes when no YAML map configured

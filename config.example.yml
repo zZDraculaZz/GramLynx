@@ -105,6 +105,7 @@ rulepack:
     пояпонски: по-японски
     попрежнему: по-прежнему
   enable_candidate_generation_ru: false
+  candidate_shadow_mode_ru: false
   candidate_backend: none
   max_candidates_ru: 3
   max_edit_distance_ru: 1

@@ -563,3 +563,94 @@ rulepack:
     text = "https://example.com севодня"
     result = Orchestrator(correlation_id="t").clean(text, mode="smart")
     assert result == "https://example.com сегодня"
+
+
+def test_candidate_generator_shadow_mode_counts_but_keeps_output(monkeypatch, tmp_path) -> None:
+    dictionary = tmp_path / "dict.txt"
+    dictionary.write_text("сегодня\n", encoding="utf-8")
+    cfg = tmp_path / "rulepack.yml"
+    cfg.write_text(
+        f"""
+policies:
+  smart:
+    enabled_stages: [s1_normalize, s2_segment, s3_spelling, s6_guardrails, s7_assemble]
+    max_changed_char_ratio: 1.0
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_shadow_mode_ru: true
+  candidate_backend: rapidfuzz
+  dictionary_source_ru: {dictionary}
+  typo_map_smart_ru: {{}}
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(cfg))
+    reset_app_config_cache()
+    deterministic_spelling._load_ru_dictionary.cache_clear()
+
+    orchestrator = Orchestrator(correlation_id="t")
+    result = orchestrator.clean("севодня", mode="smart")
+    assert result == "севодня"
+    assert orchestrator.last_run_stats["candidate_generated_count"] >= 1
+    assert orchestrator.last_run_stats["candidate_applied_count"] == 0
+
+
+def test_candidate_generator_shadow_mode_is_deterministic(monkeypatch, tmp_path) -> None:
+    dictionary = tmp_path / "dict.txt"
+    dictionary.write_text("по-русски\n", encoding="utf-8")
+    cfg = tmp_path / "rulepack.yml"
+    cfg.write_text(
+        f"""
+policies:
+  smart:
+    enabled_stages: [s1_normalize, s2_segment, s3_spelling, s6_guardrails, s7_assemble]
+    max_changed_char_ratio: 1.0
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_shadow_mode_ru: true
+  candidate_backend: rapidfuzz
+  dictionary_source_ru: {dictionary}
+  typo_map_smart_ru: {{}}
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(cfg))
+    reset_app_config_cache()
+    deterministic_spelling._load_ru_dictionary.cache_clear()
+
+    orchestrator = Orchestrator(correlation_id="t")
+    first = orchestrator.clean("порусски", mode="smart")
+    second = orchestrator.clean("порусски", mode="smart")
+    assert first == second == "порусски"
+
+
+def test_candidate_generator_shadow_mode_preserves_safety_invariants(monkeypatch, tmp_path) -> None:
+    dictionary = tmp_path / "dict.txt"
+    dictionary.write_text("неправильно\n", encoding="utf-8")
+    cfg = tmp_path / "rulepack.yml"
+    cfg.write_text(
+        f"""
+policies:
+  smart:
+    enabled_stages: [s1_normalize, s2_segment, s3_spelling, s6_guardrails, s7_assemble]
+    max_changed_char_ratio: 1.0
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_shadow_mode_ru: true
+  candidate_backend: rapidfuzz
+  dictionary_source_ru: {dictionary}
+  typo_map_smart_ru: {{}}
+  no_touch_smart_ru:
+    - непревильно
+  no_touch_prefixes_ru:
+    - "@"
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(cfg))
+    reset_app_config_cache()
+    deterministic_spelling._load_ru_dictionary.cache_clear()
+
+    text = "https://example.com @непревильно (непревильно) /непревильно/ key:непревильно непревильно"
+    result = Orchestrator(correlation_id="t").clean(text, mode="smart")
+    assert result == text
