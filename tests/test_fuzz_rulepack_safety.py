@@ -42,9 +42,9 @@ def test_fuzz_rulepack_safety(typo: str, seed: int) -> None:
         """
 rulepack:
   typo_map_strict:
-    непревильно: правильно
+    непревильно: неправильно
   typo_map_smart:
-    непревильно: правильно
+    непревильно: неправильно
     абажаю: обожаю
   punctuation:
     fix_space_before: true
@@ -80,7 +80,7 @@ rulepack:
     assert len(src_tokens) == len(dst_tokens)
 
     allowed_in = {"непревильно", "абажаю"}
-    allowed_out = {"правильно", "обожаю"}
+    allowed_out = {"неправильно", "обожаю"}
     for before, after in zip(src_tokens, dst_tokens):
         if before != after:
             assert before in allowed_in

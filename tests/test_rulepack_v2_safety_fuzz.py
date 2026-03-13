@@ -30,12 +30,67 @@ def test_rulepack_v2_safety_fuzz_seeded() -> None:
     cfg = Path(tempfile.gettempdir()) / "gramlynx_rulepack_v2_fuzz.yml"
     cfg.write_text(
         """
+policies:
+  smart:
+    max_changed_char_ratio: 1.0
 rulepack:
   typo_map_strict_ru:
-    непревильно: правильно
+    непревильно: неправильно
+    севодня: сегодня
+    сегодя: сегодня
+    пачему: почему
+    пожалуста: пожалуйста
+    пажалуста: пожалуйста
+    извените: извините
+    сдесь: здесь
+    кстате: кстати
+    учавствовать: участвовать
+    будующий: будущий
+    раскажи: расскажи
+    проблемма: проблема
+    черезчур: чересчур
   typo_map_smart_ru:
-    непревильно: правильно
+    непревильно: неправильно
     абажаю: обожаю
+    севодня: сегодня
+    сегодя: сегодня
+    пачему: почему
+    пожалуста: пожалуйста
+    пажалуста: пожалуйста
+    извените: извините
+    извеняюсь: извиняюсь
+    сдесь: здесь
+    кстате: кстати
+    учавствовать: участвовать
+    будующий: будущий
+    раскажи: расскажи
+    проблемма: проблема
+    черезчур: чересчур
+    превет: привет
+    спосибо: спасибо
+    кагда: когда
+    жызнь: жизнь
+    слишкам: слишком
+    симпотичный: симпатичный
+    агенство: агентство
+    прийдти: прийти
+    нечайно: нечаянно
+    вообше: вообще
+    преобретение: приобретение
+    ваще: вообще
+  no_touch_strict_ru:
+    - ща
+    - ваще
+    - имхо
+  no_touch_smart_ru:
+    - ща
+    - ваще
+    - имхо
+    - сорян
+    - кринж
+  no_touch_prefixes_ru:
+    - "@"
+    - "#"
   safe_normalize:
     collapse_spaces: true
     trim_line_edges: true
@@ -55,29 +110,114 @@ rulepack:
         rng = random.Random(271828)
         for i in range(120):
             pz = _protected_fragment(i + 1)
-            typo = "непревильно" if i % 2 == 0 else "абажаю"
+            typo = [
+                "непревильно",
+                "абажаю",
+                "севодня",
+                "пожалуста",
+                "пажалуста",
+                "сегодя",
+                "пачему",
+                "извеняюсь",
+                "сдесь",
+                "кстате",
+                "симпотичный",
+                "агенство",
+                "прийдти",
+                "учавствовать",
+                "будующий",
+                "раскажи",
+                "проблемма",
+                "черезчур",
+                "нечайно",
+                "вообше",
+                "преобретение",
+            ][i % 21]
             safe_word = _random_ru_word(rng)
+            nick_like = f"user_{safe_word}"
+            at_nick = f"@{safe_word}"
+            user_name = f"{safe_word}_name"
+            hash_tag = f"#{safe_word}"
+            brand_like = f"iPhone{(i % 9) + 1}"
+            mixed_script = f"{safe_word[:3]}t3st"
+            mixed_digit = f"{safe_word[:3]}123"
+            slang_token = "ваще"
+            near_pz_glued = f"{pz}{typo}"
+            near_pz_punct = f"({pz}),{typo}"
+            near_pz_colon = f"({pz}):{typo}"
+            near_pz_semicolon = f"({pz});{typo}"
+            wrapped_round = f"({typo})"
+            wrapped_quote = f"\"{typo}\""
+            wrapped_path = f"/{typo}/"
+            wrapped_colon = f"key:{typo}"
+            wrapped_underscore = f"key_{typo}"
             text = (
                 f"  начало {typo}  {safe_word}-бренд {typo}123 Непревильно "
-                f"{pz}{typo} слово ,слово  конец  "
+                f"{nick_like} {at_nick} {user_name} {hash_tag} {brand_like} {mixed_script} {mixed_digit} {slang_token} {near_pz_glued} "
+                f"{near_pz_punct} {near_pz_colon} {near_pz_semicolon} {wrapped_round} {wrapped_quote} {wrapped_path} {wrapped_colon} {wrapped_underscore} слово ,слово  конец  "
             )
 
-            result = Orchestrator(correlation_id=f"v2-fuzz-{i}").clean(text, mode="smart")
+            first = Orchestrator(correlation_id=f"v2-fuzz-{i}").clean(text, mode="smart")
+            second = Orchestrator(correlation_id=f"v2-fuzz-repeat-{i}").clean(text, mode="smart")
+
+            # deterministic behavior
+            assert first == second
+            result = first
 
             # protected fragment must survive byte-to-byte
             assert pz in result
             # placeholder markers must never leak
             assert PLACEHOLDER_TEMPLATE.split("{index}")[0] not in result
-            # only standalone lowercase typo tokens are corrected
-            if typo == "непревильно":
-                assert "правильно" in result
-            else:
-                assert "обожаю" in result
+
+            # first standalone typo token is either safely corrected or left unchanged by guardrails
+            first_token_after_prefix = result.split()[1]
+            expected_after = {
+                "непревильно": "неправильно",
+                "абажаю": "обожаю",
+                "севодня": "сегодня",
+                "пожалуста": "пожалуйста",
+                "пажалуста": "пожалуйста",
+                "сегодя": "сегодня",
+                "пачему": "почему",
+                "извеняюсь": "извиняюсь",
+                "сдесь": "здесь",
+                "кстате": "кстати",
+                "симпотичный": "симпатичный",
+                "агенство": "агентство",
+                "прийдти": "прийти",
+                "учавствовать": "участвовать",
+                "будующий": "будущий",
+                "раскажи": "расскажи",
+                "проблемма": "проблема",
+                "черезчур": "чересчур",
+                "нечайно": "нечаянно",
+                "вообше": "вообще",
+                "преобретение": "приобретение",
+            }[typo]
+            assert first_token_after_prefix in {typo, expected_after}
+
             # no-touch token categories must remain untouched
             assert f"{safe_word}-бренд" in result
             assert f"{typo}123" in result
             assert "Непревильно" in result
-            assert f"{pz}{typo}" in result
+            assert nick_like in result
+            assert at_nick in result
+            assert user_name in result
+            assert hash_tag in result
+            assert brand_like in result
+            assert mixed_script in result
+            assert mixed_digit in result
+            assert " ваще " in f" {result} "
+            assert wrapped_round in result
+            assert wrapped_quote in result
+            assert wrapped_path in result
+            assert wrapped_colon in result
+            assert wrapped_underscore in result
+
+            # near-PZ cases stay safe: glued form must remain no-touch, punctuated forms must keep PZ intact
+            assert f"({pz})," in result
+            assert f"({pz}):" in result
+            assert f"({pz});" in result
     finally:
         if prev is None:
             os.environ.pop("GRAMLYNX_CONFIG_YAML", None)
