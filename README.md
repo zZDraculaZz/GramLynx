@@ -63,6 +63,14 @@ Offline evaluation harness for candidate-generation modes:
 python tests/eval_candidate_harness.py
 ```
 
+Offline external RU benchmark harness (RuSpellGold-style layer):
+
+```bash
+python tests/eval_ruspellgold_harness.py
+```
+
+Можно переопределить путь к benchmark dataset через `GRAMLYNX_RUSPELLGOLD_PATH` (JSONL).
+
 ## Метрики (опционально)
 
 ## YAML-конфигурация (опционально)
