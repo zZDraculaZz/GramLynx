@@ -68,3 +68,7 @@ class TextDocument:
     morph_blocked_count: int = 0
     morph_allowed_count: int = 0
     morph_unknown_count: int = 0
+    candidate_generated_count: int = 0
+    candidate_applied_count: int = 0
+    candidate_rejected_count: int = 0
+    candidate_ambiguous_count: int = 0
