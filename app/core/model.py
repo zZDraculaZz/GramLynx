@@ -65,3 +65,6 @@ class TextDocument:
     normalize_changes_count: int = 0
     typo_corrections_count: int = 0
     punctuation_fixes_count: int = 0
+    morph_blocked_count: int = 0
+    morph_allowed_count: int = 0
+    morph_unknown_count: int = 0
