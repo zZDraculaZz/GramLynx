@@ -106,5 +106,28 @@ def test_defaults_used_when_env_not_set(monkeypatch) -> None:
     assert strict.max_changed_char_ratio == 0.02
     assert strict.pz_buffer_chars == 2
 
+    # Global safe default stays fail-closed: candidate generation is off.
+    assert cfg.rulepack.enable_candidate_generation_ru is False
+    assert cfg.rulepack.candidate_backend == "none"
+
     assert get_allowlist() == {"Python", "FastAPI", "Docker"}
     assert get_denylist() == {"TODO", "FIXME"}
+
+
+def test_candidate_backend_can_be_symspell_when_feature_enabled(monkeypatch, tmp_path) -> None:
+    config_file = tmp_path / "candidate_backend_symspell.yml"
+    config_file.write_text(
+        """
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_backend: symspell
+""",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(config_file))
+    reset_app_config_cache()
+
+    cfg = load_app_config()
+    assert cfg.rulepack.enable_candidate_generation_ru is True
+    assert cfg.rulepack.candidate_backend == "symspell"

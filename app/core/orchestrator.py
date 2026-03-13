@@ -80,6 +80,16 @@ class Orchestrator:
             "morph_blocked_count": getattr(document, "morph_blocked_count", 0),
             "morph_allowed_count": getattr(document, "morph_allowed_count", 0),
             "morph_unknown_count": getattr(document, "morph_unknown_count", 0),
+            "candidate_generated_count": getattr(document, "candidate_generated_count", 0),
+            "candidate_applied_count": getattr(document, "candidate_applied_count", 0),
+            "candidate_rejected_count": getattr(document, "candidate_rejected_count", 0),
+            "candidate_ambiguous_count": getattr(document, "candidate_ambiguous_count", 0),
+            "candidate_rejected_no_result_count": getattr(document, "candidate_rejected_no_result_count", 0),
+            "candidate_rejected_unsafe_candidate_count": getattr(document, "candidate_rejected_unsafe_candidate_count", 0),
+            "candidate_rejected_morph_blocked_count": getattr(document, "candidate_rejected_morph_blocked_count", 0),
+            "candidate_rejected_morph_unknown_count": getattr(document, "candidate_rejected_morph_unknown_count", 0),
+            "candidate_ambiguous_tie_count": getattr(document, "candidate_ambiguous_tie_count", 0),
+            "candidate_shadow_skipped_count": getattr(document, "candidate_shadow_skipped_count", 0),
         }
 
         total_ms = (time.time() - start_time) * 1000
