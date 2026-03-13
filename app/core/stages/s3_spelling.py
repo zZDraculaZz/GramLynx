@@ -34,11 +34,20 @@ def spelling_corrections(context: StageContext) -> None:
         no_touch_tokens=cfg.no_touch_for_mode(mode),
         no_touch_prefixes=cfg.no_touch_prefixes_for_mode(mode),
         enable_morph_safety_ru=cfg.enable_morph_safety_ru,
+        enable_candidate_generation_ru=(mode == "smart" and cfg.enable_candidate_generation_ru),
+        candidate_backend=cfg.candidate_backend,
+        max_candidates_ru=cfg.max_candidates_ru,
+        max_edit_distance_ru=cfg.max_edit_distance_ru,
+        dictionary_source_ru=cfg.dictionary_source_ru,
     )
     _ensure_morph_counters(context)
     context.document.morph_blocked_count += edits.morph_stats.morph_blocked_count
     context.document.morph_allowed_count += edits.morph_stats.morph_allowed_count
     context.document.morph_unknown_count += edits.morph_stats.morph_unknown_count
+    context.document.candidate_generated_count += edits.candidate_stats.candidate_generated_count
+    context.document.candidate_applied_count += edits.candidate_stats.candidate_applied_count
+    context.document.candidate_rejected_count += edits.candidate_stats.candidate_rejected_count
+    context.document.candidate_ambiguous_count += edits.candidate_stats.candidate_ambiguous_count
     edits_list = edits.edits
 
     # backward compatibility for built-in deterministic fixes when no YAML map configured
@@ -136,3 +145,11 @@ def _ensure_morph_counters(context: StageContext) -> None:
         document.morph_allowed_count = 0
     if not hasattr(document, "morph_unknown_count"):
         document.morph_unknown_count = 0
+    if not hasattr(document, "candidate_generated_count"):
+        document.candidate_generated_count = 0
+    if not hasattr(document, "candidate_applied_count"):
+        document.candidate_applied_count = 0
+    if not hasattr(document, "candidate_rejected_count"):
+        document.candidate_rejected_count = 0
+    if not hasattr(document, "candidate_ambiguous_count"):
+        document.candidate_ambiguous_count = 0
