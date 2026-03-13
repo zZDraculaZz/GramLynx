@@ -57,6 +57,12 @@ pytest -q
 docker build .
 ```
 
+Offline evaluation harness for candidate-generation modes:
+
+```bash
+python tests/eval_candidate_harness.py
+```
+
 ## Метрики (опционально)
 
 ## YAML-конфигурация (опционально)
