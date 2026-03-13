@@ -54,6 +54,12 @@ rulepack:
     assert "gramlynx_candidate_applied_total" in body
     assert "gramlynx_candidate_rejected_total" in body
     assert "gramlynx_candidate_ambiguous_total" in body
+    assert "gramlynx_candidate_rejected_no_result_total" in body
+    assert "gramlynx_candidate_rejected_unsafe_candidate_total" in body
+    assert "gramlynx_candidate_rejected_morph_blocked_total" in body
+    assert "gramlynx_candidate_rejected_morph_unknown_total" in body
+    assert "gramlynx_candidate_ambiguous_tie_total" in body
+    assert "gramlynx_candidate_shadow_skipped_total" in body
 
 
 def test_metrics_disabled_returns_404(monkeypatch) -> None:

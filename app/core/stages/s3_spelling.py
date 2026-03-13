@@ -49,6 +49,12 @@ def spelling_corrections(context: StageContext) -> None:
     context.document.candidate_applied_count += edits.candidate_stats.candidate_applied_count
     context.document.candidate_rejected_count += edits.candidate_stats.candidate_rejected_count
     context.document.candidate_ambiguous_count += edits.candidate_stats.candidate_ambiguous_count
+    context.document.candidate_rejected_no_result_count += edits.candidate_stats.candidate_rejected_no_result_count
+    context.document.candidate_rejected_unsafe_candidate_count += edits.candidate_stats.candidate_rejected_unsafe_candidate_count
+    context.document.candidate_rejected_morph_blocked_count += edits.candidate_stats.candidate_rejected_morph_blocked_count
+    context.document.candidate_rejected_morph_unknown_count += edits.candidate_stats.candidate_rejected_morph_unknown_count
+    context.document.candidate_ambiguous_tie_count += edits.candidate_stats.candidate_ambiguous_tie_count
+    context.document.candidate_shadow_skipped_count += edits.candidate_stats.candidate_shadow_skipped_count
     observe_candidate_stats(
         mode=mode,
         backend=cfg.candidate_backend,
@@ -56,6 +62,12 @@ def spelling_corrections(context: StageContext) -> None:
         applied=edits.candidate_stats.candidate_applied_count,
         rejected=edits.candidate_stats.candidate_rejected_count,
         ambiguous=edits.candidate_stats.candidate_ambiguous_count,
+        rejected_no_result=edits.candidate_stats.candidate_rejected_no_result_count,
+        rejected_unsafe_candidate=edits.candidate_stats.candidate_rejected_unsafe_candidate_count,
+        rejected_morph_blocked=edits.candidate_stats.candidate_rejected_morph_blocked_count,
+        rejected_morph_unknown=edits.candidate_stats.candidate_rejected_morph_unknown_count,
+        ambiguous_tie=edits.candidate_stats.candidate_ambiguous_tie_count,
+        shadow_skipped=edits.candidate_stats.candidate_shadow_skipped_count,
     )
     edits_list = edits.edits
 
@@ -162,3 +174,15 @@ def _ensure_morph_counters(context: StageContext) -> None:
         document.candidate_rejected_count = 0
     if not hasattr(document, "candidate_ambiguous_count"):
         document.candidate_ambiguous_count = 0
+    if not hasattr(document, "candidate_rejected_no_result_count"):
+        document.candidate_rejected_no_result_count = 0
+    if not hasattr(document, "candidate_rejected_unsafe_candidate_count"):
+        document.candidate_rejected_unsafe_candidate_count = 0
+    if not hasattr(document, "candidate_rejected_morph_blocked_count"):
+        document.candidate_rejected_morph_blocked_count = 0
+    if not hasattr(document, "candidate_rejected_morph_unknown_count"):
+        document.candidate_rejected_morph_unknown_count = 0
+    if not hasattr(document, "candidate_ambiguous_tie_count"):
+        document.candidate_ambiguous_tie_count = 0
+    if not hasattr(document, "candidate_shadow_skipped_count"):
+        document.candidate_shadow_skipped_count = 0

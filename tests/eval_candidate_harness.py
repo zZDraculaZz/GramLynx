@@ -37,6 +37,8 @@ FIXED_RU_CASES: tuple[EvalCase, ...] = (
     EvalCase("порусски пишу", "по-русски пишу"),
     EvalCase("попрежнему жду", "по-прежнему жду"),
     EvalCase("https://example.com севодня", "https://example.com сегодня"),
+    EvalCase("неуверин", "неуверен"),
+    EvalCase("впринципе", "в принципе"),
     EvalCase("@севодня", "@севодня"),
     EvalCase("(севодня)", "(севодня)"),
     EvalCase("севодня123", "севодня123"),
@@ -98,6 +100,12 @@ def evaluate_mode(mode_label: str) -> dict[str, float | int]:
         candidate_applied_total = 0
         candidate_rejected_total = 0
         candidate_ambiguous_total = 0
+        candidate_rejected_no_result_total = 0
+        candidate_rejected_unsafe_candidate_total = 0
+        candidate_rejected_morph_blocked_total = 0
+        candidate_rejected_morph_unknown_total = 0
+        candidate_ambiguous_tie_total = 0
+        candidate_shadow_skipped_total = 0
         rollback_total = 0
         exact_match_pass_count = 0
 
@@ -111,6 +119,12 @@ def evaluate_mode(mode_label: str) -> dict[str, float | int]:
             candidate_applied_total += int(stats.get("candidate_applied_count", 0))
             candidate_rejected_total += int(stats.get("candidate_rejected_count", 0))
             candidate_ambiguous_total += int(stats.get("candidate_ambiguous_count", 0))
+            candidate_rejected_no_result_total += int(stats.get("candidate_rejected_no_result_count", 0))
+            candidate_rejected_unsafe_candidate_total += int(stats.get("candidate_rejected_unsafe_candidate_count", 0))
+            candidate_rejected_morph_blocked_total += int(stats.get("candidate_rejected_morph_blocked_count", 0))
+            candidate_rejected_morph_unknown_total += int(stats.get("candidate_rejected_morph_unknown_count", 0))
+            candidate_ambiguous_tie_total += int(stats.get("candidate_ambiguous_tie_count", 0))
+            candidate_shadow_skipped_total += int(stats.get("candidate_shadow_skipped_count", 0))
             rollback_total += int(bool(stats.get("rollback_applied", False)))
             exact_match_pass_count += int(clean_text == case.expected_clean_text)
 
@@ -123,6 +137,12 @@ def evaluate_mode(mode_label: str) -> dict[str, float | int]:
             "candidate_applied_total": candidate_applied_total,
             "candidate_rejected_total": candidate_rejected_total,
             "candidate_ambiguous_total": candidate_ambiguous_total,
+            "candidate_rejected_no_result_total": candidate_rejected_no_result_total,
+            "candidate_rejected_unsafe_candidate_total": candidate_rejected_unsafe_candidate_total,
+            "candidate_rejected_morph_blocked_total": candidate_rejected_morph_blocked_total,
+            "candidate_rejected_morph_unknown_total": candidate_rejected_morph_unknown_total,
+            "candidate_ambiguous_tie_total": candidate_ambiguous_tie_total,
+            "candidate_shadow_skipped_total": candidate_shadow_skipped_total,
             "rollback_total": rollback_total,
             "exact_match_pass_count": exact_match_pass_count,
             "exact_match_pass_rate": round(exact_match_pass_rate, 6),

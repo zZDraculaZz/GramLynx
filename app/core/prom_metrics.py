@@ -14,6 +14,12 @@ CANDIDATE_GENERATED_TOTAL: Any = None
 CANDIDATE_APPLIED_TOTAL: Any = None
 CANDIDATE_REJECTED_TOTAL: Any = None
 CANDIDATE_AMBIGUOUS_TOTAL: Any = None
+CANDIDATE_REJECTED_NO_RESULT_TOTAL: Any = None
+CANDIDATE_REJECTED_UNSAFE_CANDIDATE_TOTAL: Any = None
+CANDIDATE_REJECTED_MORPH_BLOCKED_TOTAL: Any = None
+CANDIDATE_REJECTED_MORPH_UNKNOWN_TOTAL: Any = None
+CANDIDATE_AMBIGUOUS_TIE_TOTAL: Any = None
+CANDIDATE_SHADOW_SKIPPED_TOTAL: Any = None
 
 
 def _ensure_metrics() -> bool:
@@ -21,6 +27,9 @@ def _ensure_metrics() -> bool:
 
     global ROLLBACKS_TOTAL, PZ_SPANS_TOTAL, CHANGED_RATIO_HISTOGRAM, CONFIDENCE_HISTOGRAM, CORRECTIONS_APPLIED_TOTAL
     global CANDIDATE_GENERATED_TOTAL, CANDIDATE_APPLIED_TOTAL, CANDIDATE_REJECTED_TOTAL, CANDIDATE_AMBIGUOUS_TOTAL
+    global CANDIDATE_REJECTED_NO_RESULT_TOTAL, CANDIDATE_REJECTED_UNSAFE_CANDIDATE_TOTAL
+    global CANDIDATE_REJECTED_MORPH_BLOCKED_TOTAL, CANDIDATE_REJECTED_MORPH_UNKNOWN_TOTAL
+    global CANDIDATE_AMBIGUOUS_TIE_TOTAL, CANDIDATE_SHADOW_SKIPPED_TOTAL
 
     if os.getenv("GRAMLYNX_ENABLE_METRICS") != "1":
         return False
@@ -75,6 +84,36 @@ def _ensure_metrics() -> bool:
         "Total number of ambiguous fallback candidates.",
         labelnames=("mode", "backend"),
     )
+    CANDIDATE_REJECTED_NO_RESULT_TOTAL = Counter(
+        "gramlynx_candidate_rejected_no_result_total",
+        "Total number of fallback candidates rejected due to no result.",
+        labelnames=("mode", "backend"),
+    )
+    CANDIDATE_REJECTED_UNSAFE_CANDIDATE_TOTAL = Counter(
+        "gramlynx_candidate_rejected_unsafe_candidate_total",
+        "Total number of fallback candidates rejected as unsafe.",
+        labelnames=("mode", "backend"),
+    )
+    CANDIDATE_REJECTED_MORPH_BLOCKED_TOTAL = Counter(
+        "gramlynx_candidate_rejected_morph_blocked_total",
+        "Total number of fallback candidates rejected by morph blocker.",
+        labelnames=("mode", "backend"),
+    )
+    CANDIDATE_REJECTED_MORPH_UNKNOWN_TOTAL = Counter(
+        "gramlynx_candidate_rejected_morph_unknown_total",
+        "Total number of fallback candidates rejected due to unknown morph decision.",
+        labelnames=("mode", "backend"),
+    )
+    CANDIDATE_AMBIGUOUS_TIE_TOTAL = Counter(
+        "gramlynx_candidate_ambiguous_tie_total",
+        "Total number of fallback candidates with ambiguous tie.",
+        labelnames=("mode", "backend"),
+    )
+    CANDIDATE_SHADOW_SKIPPED_TOTAL = Counter(
+        "gramlynx_candidate_shadow_skipped_total",
+        "Total number of generated fallback candidates skipped in shadow mode.",
+        labelnames=("mode", "backend"),
+    )
     return True
 
 
@@ -126,6 +165,12 @@ def observe_candidate_stats(
     applied: int,
     rejected: int,
     ambiguous: int,
+    rejected_no_result: int,
+    rejected_unsafe_candidate: int,
+    rejected_morph_blocked: int,
+    rejected_morph_unknown: int,
+    ambiguous_tie: int,
+    shadow_skipped: int,
 ) -> None:
     """Observe fallback candidate path stats without text payloads."""
 
@@ -140,3 +185,15 @@ def observe_candidate_stats(
         CANDIDATE_REJECTED_TOTAL.labels(mode=mode, backend=backend).inc(rejected)
     if ambiguous > 0:
         CANDIDATE_AMBIGUOUS_TOTAL.labels(mode=mode, backend=backend).inc(ambiguous)
+    if rejected_no_result > 0:
+        CANDIDATE_REJECTED_NO_RESULT_TOTAL.labels(mode=mode, backend=backend).inc(rejected_no_result)
+    if rejected_unsafe_candidate > 0:
+        CANDIDATE_REJECTED_UNSAFE_CANDIDATE_TOTAL.labels(mode=mode, backend=backend).inc(rejected_unsafe_candidate)
+    if rejected_morph_blocked > 0:
+        CANDIDATE_REJECTED_MORPH_BLOCKED_TOTAL.labels(mode=mode, backend=backend).inc(rejected_morph_blocked)
+    if rejected_morph_unknown > 0:
+        CANDIDATE_REJECTED_MORPH_UNKNOWN_TOTAL.labels(mode=mode, backend=backend).inc(rejected_morph_unknown)
+    if ambiguous_tie > 0:
+        CANDIDATE_AMBIGUOUS_TIE_TOTAL.labels(mode=mode, backend=backend).inc(ambiguous_tie)
+    if shadow_skipped > 0:
+        CANDIDATE_SHADOW_SKIPPED_TOTAL.labels(mode=mode, backend=backend).inc(shadow_skipped)

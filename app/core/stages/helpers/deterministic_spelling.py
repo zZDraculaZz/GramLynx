@@ -68,6 +68,12 @@ class CandidateStats:
     candidate_applied_count: int = 0
     candidate_rejected_count: int = 0
     candidate_ambiguous_count: int = 0
+    candidate_rejected_no_result_count: int = 0
+    candidate_rejected_unsafe_candidate_count: int = 0
+    candidate_rejected_morph_blocked_count: int = 0
+    candidate_rejected_morph_unknown_count: int = 0
+    candidate_ambiguous_tie_count: int = 0
+    candidate_shadow_skipped_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -132,6 +138,12 @@ def find_rulepack_replacements(
     candidate_applied_count = 0
     candidate_rejected_count = 0
     candidate_ambiguous_count = 0
+    candidate_rejected_no_result_count = 0
+    candidate_rejected_unsafe_candidate_count = 0
+    candidate_rejected_morph_blocked_count = 0
+    candidate_rejected_morph_unknown_count = 0
+    candidate_ambiguous_tie_count = 0
+    candidate_shadow_skipped_count = 0
 
     analyzer = _get_morph_analyzer() if enable_morph_safety_ru else None
 
@@ -171,8 +183,10 @@ def find_rulepack_replacements(
 
             if status == "ambiguous":
                 candidate_ambiguous_count += 1
+                candidate_ambiguous_tie_count += 1
             elif status == "rejected":
                 candidate_rejected_count += 1
+                candidate_rejected_no_result_count += 1
             elif status == "generated" and candidate:
                 candidate_generated_count += 1
                 replacement = candidate
@@ -183,6 +197,7 @@ def find_rulepack_replacements(
         if not _safe_candidate_token(replacement):
             if from_generator:
                 candidate_rejected_count += 1
+                candidate_rejected_unsafe_candidate_count += 1
             continue
 
         if enable_morph_safety_ru and analyzer is not None:
@@ -193,14 +208,17 @@ def find_rulepack_replacements(
                 morph_blocked_count += 1
                 if from_generator:
                     candidate_rejected_count += 1
+                    candidate_rejected_morph_blocked_count += 1
                 continue
             else:
                 morph_unknown_count += 1
                 if from_generator:
                     candidate_rejected_count += 1
+                    candidate_rejected_morph_unknown_count += 1
                 continue
 
         if from_generator and candidate_shadow_mode_ru:
+            candidate_shadow_skipped_count += 1
             continue
 
         edits.append(
@@ -227,6 +245,12 @@ def find_rulepack_replacements(
             candidate_applied_count=candidate_applied_count,
             candidate_rejected_count=candidate_rejected_count,
             candidate_ambiguous_count=candidate_ambiguous_count,
+            candidate_rejected_no_result_count=candidate_rejected_no_result_count,
+            candidate_rejected_unsafe_candidate_count=candidate_rejected_unsafe_candidate_count,
+            candidate_rejected_morph_blocked_count=candidate_rejected_morph_blocked_count,
+            candidate_rejected_morph_unknown_count=candidate_rejected_morph_unknown_count,
+            candidate_ambiguous_tie_count=candidate_ambiguous_tie_count,
+            candidate_shadow_skipped_count=candidate_shadow_skipped_count,
         ),
     )
 
