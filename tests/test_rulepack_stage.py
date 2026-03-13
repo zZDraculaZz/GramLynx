@@ -346,3 +346,21 @@ rulepack:
 
     result = Orchestrator(correlation_id="t").clean("@непревильно #непревильно непревильно", mode="smart")
     assert result == "@непревильно #непревильно неправильно"
+
+
+def test_rulepack_no_touch_wrapped_tokens(monkeypatch, tmp_path) -> None:
+    cfg = tmp_path / "rulepack.yml"
+    cfg.write_text(
+        """
+rulepack:
+  typo_map_smart_ru:
+    непревильно: неправильно
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(cfg))
+    reset_app_config_cache()
+
+    text = '(непревильно) "непревильно" /непревильно/ key:непревильно key_непревильно непревильно'
+    result = Orchestrator(correlation_id="t").clean(text, mode="smart")
+    assert result == '(непревильно) "непревильно" /непревильно/ key:непревильно key_непревильно неправильно'

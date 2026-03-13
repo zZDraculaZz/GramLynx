@@ -36,14 +36,14 @@ policies:
     max_changed_char_ratio: 1.0
 rulepack:
   typo_map_strict_ru:
-    непревильно: правильно
+    непревильно: неправильно
   typo_map_smart_ru:
-    непревильно: правильно
+    непревильно: неправильно
     абажаю: обожаю
   typo_map_strict:
-    непревильно: правильно
+    непревильно: неправильно
   typo_map_smart:
-    непревильно: правильно
+    непревильно: неправильно
     абажаю: обожаю
   safe_normalize:
     collapse_spaces: true

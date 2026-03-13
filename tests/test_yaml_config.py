@@ -39,7 +39,7 @@ lexicon:
   denylist: [Bad]
 rulepack:
   typo_map_strict_ru:
-    непревильно: правильно
+    непревильно: неправильно
   safe_normalize:
     collapse_spaces: true
     trim_line_edges: true
@@ -69,7 +69,7 @@ rulepack:
 
     assert get_allowlist() == {"One", "Two"}
     assert get_denylist() == {"Bad"}
-    assert cfg.rulepack.typo_map_for_mode("strict") == {"непревильно": "правильно"}
+    assert cfg.rulepack.typo_map_for_mode("strict") == {"непревильно": "неправильно"}
     assert cfg.rulepack.safe_normalize.collapse_blank_lines is False
     assert cfg.rulepack.punctuation_for_mode().fix_space_before is False
 

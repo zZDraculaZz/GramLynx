@@ -117,6 +117,8 @@ def find_rulepack_replacements(
             continue
         if no_touch_prefixes and match.start() > 0 and text[match.start() - 1] in no_touch_prefixes:
             continue
+        if _is_sensitive_wrapped_token(text, match.start(), match.end(), no_touch_prefixes):
+            continue
         if token in allowlist or token in denylist:
             continue
         replacement = typo_map.get(token)
@@ -167,6 +169,37 @@ def _safe_ru_token(token: str) -> bool:
     if any(ch.isupper() for ch in token):
         return False
     return bool(re.fullmatch(r"[а-яё]+", token))
+
+
+def _is_sensitive_wrapped_token(
+    text: str,
+    start: int,
+    end: int,
+    no_touch_prefixes: tuple[str, ...],
+) -> bool:
+    """Conservative blocker for context-sensitive wrapped/key-like tokens."""
+
+    prev_char = text[start - 1] if start > 0 else ""
+    next_char = text[end] if end < len(text) else ""
+    before_prev = text[start - 2] if start > 1 else ""
+
+    # (token), "token", /token/
+    if prev_char == "(" and next_char == ")":
+        return True
+    if prev_char in {'"', "'"} and next_char == prev_char:
+        return True
+    if prev_char == "/" and next_char == "/":
+        return True
+
+    # key:token or key_token (identifier-like glue)
+    if prev_char in {":", "_"} and (before_prev.isalnum() or before_prev == "_"):
+        return True
+
+    # Explicit no-touch prefixes also treated as wrappers.
+    if prev_char and prev_char in no_touch_prefixes:
+        return True
+
+    return False
 
 
 def _morph_decision_ru(before: str, after: str, analyzer: Any) -> str:

@@ -20,6 +20,8 @@ def punct_corrections(context: StageContext) -> None:
 
     text = context.document.working_text
     edits = []
+    mode = _mode_label(context)
+    typo_tokens = set(load_app_config().rulepack.typo_map_for_mode(mode).keys())
     punctuation_cfg = load_app_config().rulepack.punctuation_for_mode()
 
     if punctuation_cfg.fix_space_before:
@@ -31,6 +33,8 @@ def punct_corrections(context: StageContext) -> None:
     if punctuation_cfg.fix_space_after:
         for match in re.finditer(rf"([{PUNCT_MARKS}])(?={LETTER_AFTER_PUNCT})", text):
             before = match.group(1)
+            if before == ":" and _looks_like_protected_colon_glue(text, match.start(), typo_tokens):
+                continue
             after = f"{before} "
             edits.append((match.start(), match.end(), before, after))
 
@@ -75,7 +79,6 @@ def punct_corrections(context: StageContext) -> None:
 
     if applied_count > 0:
         context.document.punctuation_fixes_count += applied_count
-        mode = _mode_label(context)
         context.metrics.edits_applied_total[(mode, STAGE_NAME)] = (
             context.metrics.edits_applied_total.get((mode, STAGE_NAME), 0) + applied_count
         )
@@ -110,3 +113,19 @@ def _placeholder_spans(text: str) -> list[tuple[int, int]]:
     for match in re.finditer(r"⟦PZ\d+⟧", text):
         spans.append((match.start(), match.end()))
     return spans
+
+
+def _looks_like_protected_colon_glue(text: str, punct_index: int, typo_tokens: set[str]) -> bool:
+    """Skip colon spacing for wrapped typo tokens like `key:непревильно`."""
+
+    if punct_index <= 0:
+        return False
+    prev_char = text[punct_index - 1]
+    if not (prev_char.isalnum() or prev_char == "_"):
+        return False
+
+    right = text[punct_index + 1 :]
+    token_match = re.match(r"[A-Za-zА-Яа-яЁё_]+", right)
+    if token_match is None:
+        return False
+    return token_match.group(0) in typo_tokens

@@ -101,10 +101,15 @@ rulepack:
             near_pz_punct = f"({pz}),{typo}"
             near_pz_colon = f"({pz}):{typo}"
             near_pz_semicolon = f"({pz});{typo}"
+            wrapped_round = f"({typo})"
+            wrapped_quote = f"\"{typo}\""
+            wrapped_path = f"/{typo}/"
+            wrapped_colon = f"key:{typo}"
+            wrapped_underscore = f"key_{typo}"
             text = (
                 f"  начало {typo}  {safe_word}-бренд {typo}123 Непревильно "
                 f"{nick_like} {at_nick} {user_name} {hash_tag} {brand_like} {mixed_script} {mixed_digit} {slang_token} {near_pz_glued} "
-                f"{near_pz_punct} {near_pz_colon} {near_pz_semicolon} слово ,слово  конец  "
+                f"{near_pz_punct} {near_pz_colon} {near_pz_semicolon} {wrapped_round} {wrapped_quote} {wrapped_path} {wrapped_colon} {wrapped_underscore} слово ,слово  конец  "
             )
 
             first = Orchestrator(correlation_id=f"v2-fuzz-{i}").clean(text, mode="smart")
@@ -143,6 +148,11 @@ rulepack:
             assert mixed_script in result
             assert mixed_digit in result
             assert " ваще " in f" {result} "
+            assert wrapped_round in result
+            assert wrapped_quote in result
+            assert wrapped_path in result
+            assert wrapped_colon in result
+            assert wrapped_underscore in result
 
             # near-PZ cases stay safe: glued form must remain no-touch, punctuated forms must keep PZ intact
             assert f"({pz})," in result

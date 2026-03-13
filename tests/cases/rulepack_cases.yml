@@ -1,6 +1,6 @@
 strict:
   - input: "это непревильно"
-    expected_clean_text: "это правильно"
+    expected_clean_text: "это неправильно"
 
   - input: "Это Непревильно"
     expected_clean_text: "Это Непревильно"
@@ -28,7 +28,7 @@ strict:
 
 smart:
   - input: "это непревильно"
-    expected_clean_text: "это правильно"
+    expected_clean_text: "это неправильно"
 
   - input: "это абажаю"
     expected_clean_text: "это обожаю"
