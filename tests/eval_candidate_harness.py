@@ -33,19 +33,48 @@ class EvalCase:
 
 
 FIXED_RU_CASES: tuple[EvalCase, ...] = (
+    # baseline typo-map-covered edits
     EvalCase("севодня будет встреча", "сегодня будет встреча"),
     EvalCase("порусски пишу", "по-русски пишу"),
     EvalCase("попрежнему жду", "по-прежнему жду"),
-    EvalCase("https://example.com севодня", "https://example.com сегодня"),
-    EvalCase("неуверин", "неуверен"),
-    EvalCase("впринципе", "в принципе"),
-    EvalCase("@севодня", "@севодня"),
-    EvalCase("(севодня)", "(севодня)"),
-    EvalCase("севодня123", "севодня123"),
+    # harder single-token / candidate-only edits
+    EvalCase("кат", "кот"),
+    EvalCase("сн", "сон"),
+    EvalCase("кид", "кит"),
+    EvalCase("сор", "сыр"),
+    EvalCase("котт", "кот"),
+    EvalCase("мирр", "мир"),
+    # noisy misspelling on edit-distance boundary
+    EvalCase("кар", "кар"),
+    # candidate path should be rejected by wrappers / no-touch / safety
+    EvalCase("@кат", "@кат"),
+    EvalCase("(кат)", "(кат)"),
+    EvalCase("token:кат", "token:кат"),
+    EvalCase("кат_ключ", "кат_ключ"),
+    EvalCase("кaт", "кaт"),
+    EvalCase("кат123", "кат123"),
+    # protected-zone classes (including near-PZ-like adjacency)
+    EvalCase("https://example.com кат", "https://example.com кот"),
+    EvalCase("кат https://example.com", "кот https://example.com"),
+    EvalCase("катhttps://example.com", "катhttps://example.com"),
 )
 
 
-def _runtime_config(candidate_enabled: bool, shadow_mode: bool, backend: str) -> str:
+# Deliberately ordered to make symspell frequency ranking differ from rapidfuzz tie handling.
+EVAL_DICTIONARY_WORDS: tuple[str, ...] = (
+    "кот",
+    "сон",
+    "кит",
+    "сыр",
+    "мир",
+    "код",
+    "коты",
+    "соня",
+    "сани",
+)
+
+
+def _runtime_config(candidate_enabled: bool, shadow_mode: bool, backend: str, dictionary_source: str) -> str:
     return f"""
 policies:
   smart:
@@ -57,7 +86,8 @@ rulepack:
   candidate_backend: {backend}
   max_candidates_ru: 3
   max_edit_distance_ru: 1
-  dictionary_source_ru: app/resources/ru_dictionary_v1.txt
+  dictionary_source_ru: {dictionary_source}
+  typo_min_token_len: 2
   typo_map_smart_ru: {{}}
   no_touch_prefixes_ru:
     - "@"
@@ -88,8 +118,14 @@ def evaluate_mode(mode_label: str) -> dict[str, float | int]:
     else:
         raise ValueError(f"unknown mode_label: {mode_label}")
 
+    dictionary_path = Path(tempfile.gettempdir()) / "gramlynx_candidate_eval_dictionary.txt"
+    dictionary_path.write_text("\n".join(EVAL_DICTIONARY_WORDS) + "\n", encoding="utf-8")
+
     cfg_path = Path(tempfile.gettempdir()) / f"gramlynx_candidate_eval_{mode_label}.yml"
-    cfg_path.write_text(_runtime_config(candidate_enabled, shadow_mode, backend), encoding="utf-8")
+    cfg_path.write_text(
+        _runtime_config(candidate_enabled, shadow_mode, backend, str(dictionary_path)),
+        encoding="utf-8",
+    )
 
     prev = os.environ.get("GRAMLYNX_CONFIG_YAML")
     os.environ["GRAMLYNX_CONFIG_YAML"] = str(cfg_path)

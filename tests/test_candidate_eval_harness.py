@@ -24,6 +24,7 @@ def test_candidate_eval_shadow_matches_baseline_and_apply_is_safe() -> None:
     assert symspell_shadow["total_cases"] == len(FIXED_RU_CASES)
     assert symspell_apply["total_cases"] == len(FIXED_RU_CASES)
 
+    # Shadow must remain output-equivalent to baseline.
     assert rapidfuzz_shadow["candidate_generated_total"] > 0
     assert rapidfuzz_shadow["candidate_applied_total"] == 0
     assert rapidfuzz_shadow["candidate_shadow_skipped_total"] > 0
@@ -34,10 +35,11 @@ def test_candidate_eval_shadow_matches_baseline_and_apply_is_safe() -> None:
     assert symspell_shadow["candidate_shadow_skipped_total"] > 0
     assert symspell_shadow["exact_match_pass_count"] == baseline["exact_match_pass_count"]
 
-    assert rapidfuzz_apply["candidate_applied_total"] >= 0
-    assert symspell_apply["candidate_applied_total"] >= 0
+    # Apply must stay safety-consistent.
     assert rapidfuzz_apply["rollback_total"] == 0
     assert symspell_apply["rollback_total"] == 0
+    assert rapidfuzz_apply["candidate_rejected_unsafe_candidate_total"] == 0
+    assert symspell_apply["candidate_rejected_unsafe_candidate_total"] == 0
 
 
 def test_candidate_eval_aggregates_have_expected_shape() -> None:
@@ -78,3 +80,20 @@ def test_candidate_eval_aggregates_have_expected_shape() -> None:
 
     # defensive check: harness keeps outputs placeholder-safe via orchestrator guardrails
     assert PLACEHOLDER_TEMPLATE.split("{index}")[0] not in str(aggregates)
+
+
+def test_candidate_eval_reason_buckets_are_informative_for_backend_comparison() -> None:
+    rapidfuzz_apply = evaluate_mode("rapidfuzz_apply")
+    symspell_apply = evaluate_mode("symspell_apply")
+
+    # Expanded corpus must produce informative, non-identical backend aggregates.
+    assert rapidfuzz_apply["candidate_ambiguous_total"] > 0
+    assert rapidfuzz_apply["candidate_ambiguous_total"] > symspell_apply["candidate_ambiguous_total"]
+    assert symspell_apply["candidate_applied_total"] > rapidfuzz_apply["candidate_applied_total"]
+
+    # no_result remains meaningful and non-zero.
+    assert rapidfuzz_apply["candidate_rejected_no_result_total"] > 0
+    assert symspell_apply["candidate_rejected_no_result_total"] > 0
+
+    # quality lift should differ once tie/noise cases are present.
+    assert rapidfuzz_apply["exact_match_pass_count"] != symspell_apply["exact_match_pass_count"]
