@@ -13,25 +13,41 @@ def test_candidate_eval_harness_repeated_run_is_stable() -> None:
 
 def test_candidate_eval_shadow_matches_baseline_and_apply_is_safe() -> None:
     baseline = evaluate_mode("baseline")
-    shadow = evaluate_mode("shadow")
-    apply = evaluate_mode("apply")
+    rapidfuzz_shadow = evaluate_mode("rapidfuzz_shadow")
+    rapidfuzz_apply = evaluate_mode("rapidfuzz_apply")
+    symspell_shadow = evaluate_mode("symspell_shadow")
+    symspell_apply = evaluate_mode("symspell_apply")
 
     assert baseline["total_cases"] == len(FIXED_RU_CASES)
-    assert shadow["total_cases"] == len(FIXED_RU_CASES)
-    assert apply["total_cases"] == len(FIXED_RU_CASES)
+    assert rapidfuzz_shadow["total_cases"] == len(FIXED_RU_CASES)
+    assert rapidfuzz_apply["total_cases"] == len(FIXED_RU_CASES)
+    assert symspell_shadow["total_cases"] == len(FIXED_RU_CASES)
+    assert symspell_apply["total_cases"] == len(FIXED_RU_CASES)
 
-    assert shadow["candidate_generated_total"] > 0
-    assert shadow["candidate_applied_total"] == 0
-    assert shadow["exact_match_pass_count"] == baseline["exact_match_pass_count"]
+    assert rapidfuzz_shadow["candidate_generated_total"] > 0
+    assert rapidfuzz_shadow["candidate_applied_total"] == 0
+    assert rapidfuzz_shadow["exact_match_pass_count"] == baseline["exact_match_pass_count"]
 
-    assert apply["candidate_applied_total"] >= 0
-    assert apply["rollback_total"] == 0
+    assert symspell_shadow["candidate_generated_total"] > 0
+    assert symspell_shadow["candidate_applied_total"] == 0
+    assert symspell_shadow["exact_match_pass_count"] == baseline["exact_match_pass_count"]
+
+    assert rapidfuzz_apply["candidate_applied_total"] >= 0
+    assert symspell_apply["candidate_applied_total"] >= 0
+    assert rapidfuzz_apply["rollback_total"] == 0
+    assert symspell_apply["rollback_total"] == 0
 
 
 def test_candidate_eval_aggregates_have_expected_shape() -> None:
     aggregates = evaluate_all_modes()
 
-    for mode_name in ("baseline", "shadow", "apply"):
+    for mode_name in (
+        "baseline",
+        "rapidfuzz_shadow",
+        "rapidfuzz_apply",
+        "symspell_shadow",
+        "symspell_apply",
+    ):
         mode_stats = aggregates[mode_name]
         assert set(mode_stats.keys()) == {
             "total_cases",

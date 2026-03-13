@@ -1,9 +1,11 @@
 """Offline evaluation harness for RU candidate-generation modes.
 
-Runs fixed cases in three modes:
+Runs fixed cases in five modes:
 - baseline: candidate generation disabled
-- shadow: candidate generation enabled, shadow (no apply)
-- apply: candidate generation enabled and applied
+- rapidfuzz_shadow: rapidfuzz enabled, shadow (no apply)
+- rapidfuzz_apply: rapidfuzz enabled and applied
+- symspell_shadow: symspell enabled, shadow (no apply)
+- symspell_apply: symspell enabled and applied
 
 Outputs only aggregated numeric stats.
 """
@@ -41,7 +43,7 @@ FIXED_RU_CASES: tuple[EvalCase, ...] = (
 )
 
 
-def _runtime_config(candidate_enabled: bool, shadow_mode: bool) -> str:
+def _runtime_config(candidate_enabled: bool, shadow_mode: bool, backend: str) -> str:
     return f"""
 policies:
   smart:
@@ -50,7 +52,7 @@ policies:
 rulepack:
   enable_candidate_generation_ru: {str(candidate_enabled).lower()}
   candidate_shadow_mode_ru: {str(shadow_mode).lower()}
-  candidate_backend: rapidfuzz
+  candidate_backend: {backend}
   max_candidates_ru: 3
   max_edit_distance_ru: 1
   dictionary_source_ru: app/resources/ru_dictionary_v1.txt
@@ -64,17 +66,28 @@ def evaluate_mode(mode_label: str) -> dict[str, float | int]:
     if mode_label == "baseline":
         candidate_enabled = False
         shadow_mode = False
-    elif mode_label == "shadow":
+        backend = "none"
+    elif mode_label == "rapidfuzz_shadow":
         candidate_enabled = True
         shadow_mode = True
-    elif mode_label == "apply":
+        backend = "rapidfuzz"
+    elif mode_label == "rapidfuzz_apply":
         candidate_enabled = True
         shadow_mode = False
+        backend = "rapidfuzz"
+    elif mode_label == "symspell_shadow":
+        candidate_enabled = True
+        shadow_mode = True
+        backend = "symspell"
+    elif mode_label == "symspell_apply":
+        candidate_enabled = True
+        shadow_mode = False
+        backend = "symspell"
     else:
         raise ValueError(f"unknown mode_label: {mode_label}")
 
     cfg_path = Path(tempfile.gettempdir()) / f"gramlynx_candidate_eval_{mode_label}.yml"
-    cfg_path.write_text(_runtime_config(candidate_enabled, shadow_mode), encoding="utf-8")
+    cfg_path.write_text(_runtime_config(candidate_enabled, shadow_mode, backend), encoding="utf-8")
 
     prev = os.environ.get("GRAMLYNX_CONFIG_YAML")
     os.environ["GRAMLYNX_CONFIG_YAML"] = str(cfg_path)
@@ -125,8 +138,10 @@ def evaluate_mode(mode_label: str) -> dict[str, float | int]:
 def evaluate_all_modes() -> dict[str, dict[str, float | int]]:
     return {
         "baseline": evaluate_mode("baseline"),
-        "shadow": evaluate_mode("shadow"),
-        "apply": evaluate_mode("apply"),
+        "rapidfuzz_shadow": evaluate_mode("rapidfuzz_shadow"),
+        "rapidfuzz_apply": evaluate_mode("rapidfuzz_apply"),
+        "symspell_shadow": evaluate_mode("symspell_shadow"),
+        "symspell_apply": evaluate_mode("symspell_apply"),
     }
 
 

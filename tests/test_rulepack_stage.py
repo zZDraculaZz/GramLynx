@@ -654,3 +654,149 @@ rulepack:
     text = "https://example.com @непревильно (непревильно) /непревильно/ key:непревильно непревильно"
     result = Orchestrator(correlation_id="t").clean(text, mode="smart")
     assert result == text
+
+
+def test_candidate_symspell_typo_map_precedence(monkeypatch, tmp_path) -> None:
+    cfg = tmp_path / "rulepack.yml"
+    cfg.write_text(
+        """
+policies:
+  smart:
+    enabled_stages: [s1_normalize, s2_segment, s3_spelling, s6_guardrails, s7_assemble]
+    max_changed_char_ratio: 1.0
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_backend: symspell
+  dictionary_source_ru: app/resources/ru_dictionary_v1.txt
+  typo_map_smart_ru:
+    севодня: сегодня
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(cfg))
+    reset_app_config_cache()
+    deterministic_spelling._load_ru_dictionary.cache_clear()
+    deterministic_spelling._get_symspell.cache_clear()
+
+    result = Orchestrator(correlation_id="t").clean("севодня", mode="smart")
+    assert result == "сегодня"
+
+
+def test_candidate_symspell_respects_safety_guards(monkeypatch, tmp_path) -> None:
+    dictionary = tmp_path / "dict.txt"
+    dictionary.write_text("неправильно\n", encoding="utf-8")
+    cfg = tmp_path / "rulepack.yml"
+    cfg.write_text(
+        f"""
+policies:
+  smart:
+    enabled_stages: [s1_normalize, s2_segment, s3_spelling, s6_guardrails, s7_assemble]
+    max_changed_char_ratio: 1.0
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_backend: symspell
+  dictionary_source_ru: {dictionary}
+  typo_map_smart_ru: {{}}
+  no_touch_smart_ru:
+    - непревильно
+  no_touch_prefixes_ru:
+    - "@"
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(cfg))
+    reset_app_config_cache()
+    deterministic_spelling._load_ru_dictionary.cache_clear()
+    deterministic_spelling._get_symspell.cache_clear()
+
+    text = '@непревильно (непревильно) /непревильно/ key:непревильно key_непревильно непревильно123 непревильноt3st непревильно'
+    result = Orchestrator(correlation_id="t").clean(text, mode="smart")
+    assert result == text
+
+
+def test_candidate_symspell_shadow_mode_keeps_output(monkeypatch, tmp_path) -> None:
+    dictionary = tmp_path / "dict.txt"
+    dictionary.write_text("сегодня\n", encoding="utf-8")
+    cfg = tmp_path / "rulepack.yml"
+    cfg.write_text(
+        f"""
+policies:
+  smart:
+    enabled_stages: [s1_normalize, s2_segment, s3_spelling, s6_guardrails, s7_assemble]
+    max_changed_char_ratio: 1.0
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_shadow_mode_ru: true
+  candidate_backend: symspell
+  dictionary_source_ru: {dictionary}
+  typo_map_smart_ru: {{}}
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(cfg))
+    reset_app_config_cache()
+    deterministic_spelling._load_ru_dictionary.cache_clear()
+    deterministic_spelling._get_symspell.cache_clear()
+
+    orchestrator = Orchestrator(correlation_id="t")
+    result = orchestrator.clean("севодня", mode="smart")
+    assert result == "севодня"
+    assert orchestrator.last_run_stats["candidate_generated_count"] >= 1
+    assert orchestrator.last_run_stats["candidate_applied_count"] == 0
+
+
+def test_candidate_symspell_is_deterministic(monkeypatch, tmp_path) -> None:
+    dictionary = tmp_path / "dict.txt"
+    dictionary.write_text("по-русски\n", encoding="utf-8")
+    cfg = tmp_path / "rulepack.yml"
+    cfg.write_text(
+        f"""
+policies:
+  smart:
+    enabled_stages: [s1_normalize, s2_segment, s3_spelling, s6_guardrails, s7_assemble]
+    max_changed_char_ratio: 1.0
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_backend: symspell
+  dictionary_source_ru: {dictionary}
+  typo_map_smart_ru: {{}}
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(cfg))
+    reset_app_config_cache()
+    deterministic_spelling._load_ru_dictionary.cache_clear()
+    deterministic_spelling._get_symspell.cache_clear()
+
+    orchestrator = Orchestrator(correlation_id="t")
+    first = orchestrator.clean("порусски", mode="smart")
+    second = orchestrator.clean("порусски", mode="smart")
+    assert first == second == "по-русски"
+
+
+def test_candidate_symspell_near_pz_keeps_buffer_and_restore(monkeypatch, tmp_path) -> None:
+    dictionary = tmp_path / "dict.txt"
+    dictionary.write_text("сегодня\n", encoding="utf-8")
+    cfg = tmp_path / "rulepack.yml"
+    cfg.write_text(
+        f"""
+policies:
+  smart:
+    enabled_stages: [s1_normalize, s2_segment, s3_spelling, s6_guardrails, s7_assemble]
+    max_changed_char_ratio: 1.0
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_backend: symspell
+  dictionary_source_ru: {dictionary}
+  typo_map_smart_ru: {{}}
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(cfg))
+    reset_app_config_cache()
+    deterministic_spelling._load_ru_dictionary.cache_clear()
+    deterministic_spelling._get_symspell.cache_clear()
+
+    text = "https://example.com севодня"
+    result = Orchestrator(correlation_id="t").clean(text, mode="smart")
+    assert result == "https://example.com сегодня"

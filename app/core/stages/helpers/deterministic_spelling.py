@@ -151,13 +151,24 @@ def find_rulepack_replacements(
         replacement = typo_map.get(token)
         from_generator = False
 
-        if not replacement and enable_candidate_generation_ru and candidate_backend == "rapidfuzz":
-            candidate, status = _candidate_from_rapidfuzz(
-                token=token,
-                max_candidates=max_candidates_ru,
-                max_edit_distance=max_edit_distance_ru,
-                dictionary_source=dictionary_source_ru,
-            )
+        if not replacement and enable_candidate_generation_ru:
+            candidate = None
+            status = "rejected"
+            if candidate_backend == "rapidfuzz":
+                candidate, status = _candidate_from_rapidfuzz(
+                    token=token,
+                    max_candidates=max_candidates_ru,
+                    max_edit_distance=max_edit_distance_ru,
+                    dictionary_source=dictionary_source_ru,
+                )
+            elif candidate_backend == "symspell":
+                candidate, status = _candidate_from_symspell(
+                    token=token,
+                    max_candidates=max_candidates_ru,
+                    max_edit_distance=max_edit_distance_ru,
+                    dictionary_source=dictionary_source_ru,
+                )
+
             if status == "ambiguous":
                 candidate_ambiguous_count += 1
             elif status == "rejected":
@@ -309,6 +320,78 @@ def _load_ru_dictionary(dictionary_source: str) -> tuple[str, ...]:
         if _safe_candidate_token(word):
             words.append(word)
     return tuple(dict.fromkeys(words))
+
+
+
+
+
+
+def _candidate_from_symspell(
+    token: str,
+    max_candidates: int,
+    max_edit_distance: int,
+    dictionary_source: str,
+) -> tuple[str | None, str]:
+    try:
+        from symspellpy import Verbosity
+    except Exception:
+        return None, "rejected"
+
+    symspell = _get_symspell(dictionary_source)
+    if symspell is None:
+        return None, "rejected"
+
+    try:
+        suggestions = symspell.lookup(
+            token,
+            Verbosity.CLOSEST,
+            max_edit_distance=max_edit_distance,
+            include_unknown=False,
+            transfer_casing=False,
+        )
+    except Exception:
+        return None, "rejected"
+
+    if not suggestions:
+        return None, "rejected"
+
+    filtered: list[tuple[str, int, int]] = []
+    for suggestion in suggestions[: max(1, max_candidates)]:
+        term = suggestion.term
+        if term == token or not _safe_candidate_token(term):
+            continue
+        dist = int(suggestion.distance)
+        if dist <= max_edit_distance:
+            filtered.append((term, dist, int(suggestion.count)))
+
+    if not filtered:
+        return None, "rejected"
+
+    filtered.sort(key=lambda item: (item[1], -item[2], item[0]))
+    best = filtered[0]
+    if len(filtered) > 1:
+        second = filtered[1]
+        if (best[1], best[2]) == (second[1], second[2]):
+            return None, "ambiguous"
+
+    return best[0], "generated"
+@lru_cache(maxsize=4)
+def _get_symspell(dictionary_source: str):
+    try:
+        from symspellpy import SymSpell
+    except Exception:
+        return None
+
+    words = _load_ru_dictionary(dictionary_source)
+    if not words:
+        return None
+
+    symspell = SymSpell(max_dictionary_edit_distance=2, prefix_length=7)
+    for rank, word in enumerate(words):
+        # deterministic pseudo-frequency: earlier words get higher count
+        count = max(1, len(words) - rank)
+        symspell.create_dictionary_entry(word, count)
+    return symspell
 
 
 def _is_sensitive_wrapped_token(
