@@ -45,7 +45,7 @@ pytest -q
 
 ## Тестирование
 
-Для полного набора тестов (включая safety/fuzz и опциональный morph safety-layer) используйте установку с dev+metrics+morph extras:
+Для полного набора тестов (включая candidate backend tests, safety/fuzz и опциональный morph safety-layer) используйте установку с dev+metrics+morph extras:
 
 ```bash
 pip install -e ".[dev,metrics,morph]"
@@ -62,6 +62,14 @@ Offline evaluation harness for candidate-generation modes:
 ```bash
 python tests/eval_candidate_harness.py
 ```
+
+Offline external RU benchmark harness (RuSpellGold-style layer):
+
+```bash
+python tests/eval_ruspellgold_harness.py
+```
+
+Можно переопределить путь к benchmark dataset через `GRAMLYNX_RUSPELLGOLD_PATH` (JSONL).
 
 ## Метрики (опционально)
 
