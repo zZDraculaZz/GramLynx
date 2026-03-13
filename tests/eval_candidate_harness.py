@@ -37,38 +37,78 @@ FIXED_RU_CASES: tuple[EvalCase, ...] = (
     EvalCase("севодня будет встреча", "сегодня будет встреча"),
     EvalCase("порусски пишу", "по-русски пишу"),
     EvalCase("попрежнему жду", "по-прежнему жду"),
-    # harder single-token / candidate-only edits
+    # harder single-token / candidate-only edits (5-10 chars)
+    EvalCase("тишена", "тишина"),
+    EvalCase("калидор", "коридор"),
+    EvalCase("коментарий", "комментарий"),
+    EvalCase("програма", "программа"),
+    EvalCase("однокласник", "одноклассник"),
+    EvalCase("акуратно", "аккуратно"),
+    EvalCase("пакупатель", "покупатель"),
+    EvalCase("превычка", "привычка"),
+    # shorter harder tokens (candidate-only)
     EvalCase("кат", "кот"),
     EvalCase("сн", "сон"),
     EvalCase("кид", "кит"),
     EvalCase("сор", "сыр"),
     EvalCase("котт", "кот"),
     EvalCase("мирр", "мир"),
-    # noisy misspelling on edit-distance boundary
+    # candidate-only ambiguity / near-tie
+    EvalCase("токин", "токин"),
+    EvalCase("карп", "карп"),
+    # noisy misspellings on edit-distance boundary
     EvalCase("кар", "кар"),
+    EvalCase("кордор", "кордор"),
+    EvalCase("комментрий", "комментрий"),
+    # morph-sensitive but safe candidate-only block
+    EvalCase("миры", "миры"),
+    EvalCase("мирры", "мирры"),
+    EvalCase("коты", "коты"),
     # candidate path should be rejected by wrappers / no-touch / safety
     EvalCase("@кат", "@кат"),
+    EvalCase("#кат", "#кат"),
     EvalCase("(кат)", "(кат)"),
+    EvalCase('"кат"', '"кат"'),
+    EvalCase("/кат/", "/кат/"),
     EvalCase("token:кат", "token:кат"),
     EvalCase("кат_ключ", "кат_ключ"),
     EvalCase("кaт", "кaт"),
     EvalCase("кат123", "кат123"),
+    EvalCase("КаТ", "КаТ"),
+    EvalCase("кот2", "кот2"),
     # protected-zone classes (including near-PZ-like adjacency)
     EvalCase("https://example.com кат", "https://example.com кот"),
     EvalCase("кат https://example.com", "кот https://example.com"),
     EvalCase("катhttps://example.com", "катhttps://example.com"),
+    EvalCase("(https://example.com):кат", "(https://example.com):кат"),
+    EvalCase("mail user@mail.example кат", "mail user@mail.example кот"),
+    EvalCase("кат 550e8400-e29b-41d4-a716-446655440000", "кот 550e8400-e29b-41d4-a716-446655440000"),
 )
 
 
 # Deliberately ordered to make symspell frequency ranking differ from rapidfuzz tie handling.
 EVAL_DICTIONARY_WORDS: tuple[str, ...] = (
+    "тишина",
+    "коридор",
+    "комментарий",
+    "программа",
+    "одноклассник",
+    "аккуратно",
+    "покупатель",
+    "привычка",
     "кот",
-    "сон",
+    "коты",
     "кит",
     "сыр",
     "мир",
+    "миры",
+    "сон",
     "код",
-    "коты",
+    "токен",
+    "токан",
+    "карп",
+    "кар",
+    "карта",
     "соня",
     "сани",
 )

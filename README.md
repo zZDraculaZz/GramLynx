@@ -45,7 +45,7 @@ pytest -q
 
 ## Тестирование
 
-Для полного набора тестов (включая safety/fuzz и опциональный morph safety-layer) используйте установку с dev+metrics+morph extras:
+Для полного набора тестов (включая candidate backend tests, safety/fuzz и опциональный morph safety-layer) используйте установку с dev+metrics+morph extras:
 
 ```bash
 pip install -e ".[dev,metrics,morph]"
