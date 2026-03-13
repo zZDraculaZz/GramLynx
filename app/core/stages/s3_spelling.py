@@ -22,7 +22,8 @@ def spelling_corrections(context: StageContext) -> None:
 
     text = context.document.working_text
     cfg = load_app_config().rulepack
-    typo_map = cfg.typo_map_smart if context.policy.allow_punct_stage else cfg.typo_map_strict
+    mode = _mode_label(context)
+    typo_map = cfg.typo_map_for_mode(mode)
 
     edits = find_rulepack_replacements(
         text=text,
@@ -80,7 +81,7 @@ def spelling_corrections(context: StageContext) -> None:
     context.document.working_text = text
 
     if applied_count > 0:
-        mode = _mode_label(context)
+        context.document.typo_corrections_count += applied_count
         context.metrics.edits_applied_total[(mode, STAGE_NAME)] = (
             context.metrics.edits_applied_total.get((mode, STAGE_NAME), 0) + applied_count
         )

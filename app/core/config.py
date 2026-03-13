@@ -54,13 +54,50 @@ class RulepackPunctuationConfig(BaseModel):
     fix_space_after: bool = True
 
 
+class RulepackSafeNormalizeConfig(BaseModel):
+    model_config = MODEL_CONFIG
+
+    collapse_spaces: bool = True
+    trim_line_edges: bool = True
+    collapse_blank_lines: bool = True
+
+
+class RulepackPunctuationSpacingRuConfig(BaseModel):
+    model_config = MODEL_CONFIG
+
+    fix_space_before: bool = True
+    fix_space_after: bool = True
+
+
 class RulepackConfig(BaseModel):
     model_config = MODEL_CONFIG
 
     typo_map_strict: dict[str, str] = Field(default_factory=dict)
     typo_map_smart: dict[str, str] = Field(default_factory=dict)
+    typo_map_strict_ru: dict[str, str] = Field(default_factory=dict)
+    typo_map_smart_ru: dict[str, str] = Field(default_factory=dict)
     typo_min_token_len: int = Field(default=4, ge=1)
+    safe_normalize: RulepackSafeNormalizeConfig = Field(default_factory=RulepackSafeNormalizeConfig)
     punctuation: RulepackPunctuationConfig = Field(default_factory=RulepackPunctuationConfig)
+    punctuation_spacing_ru: RulepackPunctuationSpacingRuConfig = Field(
+        default_factory=RulepackPunctuationSpacingRuConfig
+    )
+
+    def typo_map_for_mode(self, mode: str) -> dict[str, str]:
+        if mode == "smart":
+            return self.typo_map_smart_ru or self.typo_map_smart
+        return self.typo_map_strict_ru or self.typo_map_strict
+
+    def punctuation_for_mode(self) -> RulepackPunctuationSpacingRuConfig:
+        if (
+            self.punctuation_spacing_ru.fix_space_before is not True
+            or self.punctuation_spacing_ru.fix_space_after is not True
+        ):
+            return self.punctuation_spacing_ru
+        return RulepackPunctuationSpacingRuConfig(
+            fix_space_before=self.punctuation.fix_space_before,
+            fix_space_after=self.punctuation.fix_space_after,
+        )
 
 
 class AppConfig(BaseModel):

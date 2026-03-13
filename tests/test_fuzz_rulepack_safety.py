@@ -28,7 +28,7 @@ def _pz_snippet(seed: int) -> str:
 
 def _build_text(target: str, pz: str) -> str:
     # first target is far from PZ and may be corrected, second is glued to PZ and must stay unchanged
-    return f"начало {target} середина {pz}{target} конец"
+    return f"начало {target} {target}-бренд Непревильно {target}123 середина {pz}{target} конец"
 
 
 @settings(max_examples=80, deadline=None)
@@ -88,3 +88,5 @@ rulepack:
 
     # Adjacent-to-PZ typo instance should remain unchanged due to token boundary constraints.
     assert f"{pz}{typo}" in result
+    assert f"{typo}-бренд" in result
+    assert "Непревильно" in result

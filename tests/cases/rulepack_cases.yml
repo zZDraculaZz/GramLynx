@@ -42,6 +42,12 @@ smart:
   - input: "смешанный непревильноt3st"
     expected_clean_text: "смешанный непревильноt3st"
 
+  - input: "бренд непревильно-слово"
+    expected_clean_text: "бренд непревильно-слово"
+
+  - input: "имя Непревильно"
+    expected_clean_text: "имя Непревильно"
+
   - input: "рядом https://example.com/непревильно"
     expected_clean_text: "рядом https://example.com/непревильно"
 

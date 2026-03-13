@@ -62,3 +62,6 @@ class TextDocument:
     safe_snapshot_text: Optional[str] = None
     safe_snapshot_placeholders: Dict[str, str] = field(default_factory=dict)
     safe_snapshot_spans: List[ProtectedSpan] = field(default_factory=list)
+    normalize_changes_count: int = 0
+    typo_corrections_count: int = 0
+    punctuation_fixes_count: int = 0
