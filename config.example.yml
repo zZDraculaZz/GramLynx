@@ -86,6 +86,30 @@ rulepack:
     нечайно: нечаянно
     вообше: вообще
     преобретение: приобретение
+    помоему: по-моему
+    всетаки: все-таки
+    ктото: кто-то
+    чтото: что-то
+    какойто: какой-то
+    гдето: где-то
+    когдато: когда-то
+    почемуто: почему-то
+    зачемто: зачем-то
+    отчегото: отчего-то
+    изза: из-за
+    изпод: из-под
+    порусски: по-русски
+    поанглийски: по-английски
+    понемецки: по-немецки
+    пофранцузски: по-французски
+    пояпонски: по-японски
+    попрежнему: по-прежнему
+  enable_candidate_generation_ru: false
+  candidate_shadow_mode_ru: false
+  candidate_backend: none  # none | rapidfuzz | symspell
+  max_candidates_ru: 3
+  max_edit_distance_ru: 1
+  dictionary_source_ru: app/resources/ru_dictionary_v1.txt
   no_touch_strict_ru:
     - ща
     - ваще
