@@ -9,12 +9,13 @@ ROLLBACKS_TOTAL: Any = None
 PZ_SPANS_TOTAL: Any = None
 CHANGED_RATIO_HISTOGRAM: Any = None
 CONFIDENCE_HISTOGRAM: Any = None
+CORRECTIONS_APPLIED_TOTAL: Any = None
 
 
 def _ensure_metrics() -> bool:
     """Initialize collectors lazily only when metrics are enabled."""
 
-    global ROLLBACKS_TOTAL, PZ_SPANS_TOTAL, CHANGED_RATIO_HISTOGRAM, CONFIDENCE_HISTOGRAM
+    global ROLLBACKS_TOTAL, PZ_SPANS_TOTAL, CHANGED_RATIO_HISTOGRAM, CONFIDENCE_HISTOGRAM, CORRECTIONS_APPLIED_TOTAL
 
     if os.getenv("GRAMLYNX_ENABLE_METRICS") != "1":
         return False
@@ -43,6 +44,11 @@ def _ensure_metrics() -> bool:
         "gramlynx_confidence_bucket",
         "Document confidence distribution.",
         buckets=(0.0, 0.5, 0.7, 0.85, 0.9, 0.95, 0.99, 1.0),
+    )
+    CORRECTIONS_APPLIED_TOTAL = Counter(
+        "gramlynx_corrections_applied_total",
+        "Total number of deterministic corrections applied by stage.",
+        labelnames=("mode", "stage"),
     )
     return True
 
@@ -77,3 +83,12 @@ def observe_document_stats(mode: str, baseline: str, current: str, confidence: f
     if confidence is not None:
         conf = min(max(confidence, 0.0), 1.0)
         CONFIDENCE_HISTOGRAM.observe(conf)
+
+
+def observe_corrections_applied(mode: str, stage: str, count: int) -> None:
+    """Observe count of applied deterministic corrections by stage."""
+
+    if not _ensure_metrics():
+        return
+    if count > 0:
+        CORRECTIONS_APPLIED_TOTAL.labels(mode=mode, stage=stage).inc(count)

@@ -5,11 +5,14 @@ import re
 
 from app.core.config import load_app_config
 from app.core.model import Edit
+from app.core.observability import log_event
+from app.core.prom_metrics import observe_corrections_applied
 from app.core.stages.base import StageContext
 
 
 PUNCT_MARKS = r",\.:;!?"
 LETTER_AFTER_PUNCT = r"[A-Za-zА-Яа-яЁё]"
+STAGE_NAME = "s5_punct"
 
 
 def punct_corrections(context: StageContext) -> None:
@@ -33,6 +36,7 @@ def punct_corrections(context: StageContext) -> None:
 
     edits.sort(key=lambda item: item[0])
     offset = 0
+    applied_count = 0
     for start, end, before, after in edits:
         current_start = start + offset
         current_end = end + offset
@@ -45,13 +49,14 @@ def punct_corrections(context: StageContext) -> None:
                     after=after,
                     edit_type="punct",
                     confidence=1.0,
-                    stage="s5_punct",
+                    stage=STAGE_NAME,
                     safe_reason="blocked_near_protected_zone",
                 )
             )
             continue
         text = text[:current_start] + after + text[current_end:]
         offset += len(after) - len(before)
+        applied_count += 1
         context.document.audit_log.applied_edits.append(
             Edit(
                 start=current_start,
@@ -60,13 +65,31 @@ def punct_corrections(context: StageContext) -> None:
                 after=after,
                 edit_type="punct",
                 confidence=1.0,
-                stage="s5_punct",
+                stage=STAGE_NAME,
                 safe_reason="whitespace_punct",
             )
         )
 
     text = re.sub(r"[ \t\f\v]+", " ", text)
     context.document.working_text = text.strip(" \t")
+
+    if applied_count > 0:
+        mode = _mode_label(context)
+        context.metrics.edits_applied_total[(mode, STAGE_NAME)] = (
+            context.metrics.edits_applied_total.get((mode, STAGE_NAME), 0) + applied_count
+        )
+        observe_corrections_applied(mode=mode, stage=STAGE_NAME, count=applied_count)
+        log_event(
+            event="stage_corrections_applied",
+            correlation_id=context.correlation_id,
+            mode=mode,
+            stage=STAGE_NAME,
+            corrections_applied=applied_count,
+        )
+
+
+def _mode_label(context: StageContext) -> str:
+    return "smart" if context.policy.allow_punct_stage else "strict"
 
 
 def _edit_allowed(context: StageContext, start: int, end: int) -> bool:

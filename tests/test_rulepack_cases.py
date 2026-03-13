@@ -1,0 +1,51 @@
+"""Regression runner for RulePack YAML cases."""
+from __future__ import annotations
+
+from pathlib import Path
+
+import yaml
+
+from app.core.config import reset_app_config_cache
+from app.core.orchestrator import Orchestrator
+
+
+def _load_cases() -> dict[str, list[dict[str, str]]]:
+    data = yaml.safe_load(Path("tests/cases/rulepack_cases.yml").read_text(encoding="utf-8"))
+    assert isinstance(data, dict)
+    return data
+
+
+def test_rulepack_cases_regression(monkeypatch, tmp_path) -> None:
+    cfg = tmp_path / "rulepack_runtime.yml"
+    cfg.write_text(
+        """
+policies:
+  strict:
+    enabled_stages: [s1_normalize, s2_segment, s3_spelling, s6_guardrails, s7_assemble]
+    max_changed_char_ratio: 1.0
+  smart:
+    enabled_stages: [s1_normalize, s2_segment, s3_spelling, s4_grammar, s5_punct, s6_guardrails, s7_assemble]
+    max_changed_char_ratio: 1.0
+rulepack:
+  typo_map_strict:
+    непревильно: правильно
+  typo_map_smart:
+    непревильно: правильно
+    абажаю: обожаю
+  punctuation:
+    fix_space_before: true
+    fix_space_after: true
+""",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(cfg))
+    reset_app_config_cache()
+
+    cases = _load_cases()
+
+    for mode, items in cases.items():
+        assert mode in {"strict", "smart"}
+        for case in items:
+            result = Orchestrator(correlation_id=f"case-{mode}").clean(case["input"], mode=mode)
+            assert result == case["expected_clean_text"]
