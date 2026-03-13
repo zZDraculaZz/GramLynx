@@ -162,6 +162,18 @@ smart:
     expected_clean_text: "из-за дождя"
   - input: "изпод стола"
     expected_clean_text: "из-под стола"
+  - input: "пишу порусски"
+    expected_clean_text: "пишу по-русски"
+  - input: "говорю поанглийски"
+    expected_clean_text: "говорю по-английски"
+  - input: "читаю понемецки"
+    expected_clean_text: "читаю по-немецки"
+  - input: "объяснил пофранцузски"
+    expected_clean_text: "объяснил по-французски"
+  - input: "ответил пояпонски"
+    expected_clean_text: "ответил по-японски"
+  - input: "попрежнему жду"
+    expected_clean_text: "по-прежнему жду"
 
   # сленг/разговорные формы, которые НЕ надо исправлять (negative)
   - input: "ща приду"
