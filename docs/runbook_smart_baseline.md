@@ -35,6 +35,7 @@ GRAMLYNX_CONFIG_YAML=./config.smart_baseline_shadow_staging.yml uvicorn app.main
 
 Подробная rollout-политика: `docs/shadow_first_rollout_policy.md`.
 Compact local operator/demo walkthrough: `docs/smart_baseline_local_review_walkthrough.md`.
+Compact usefulness showcase (user-like texts): `tests/generate_usefulness_showcase.py`.
 
 ## 2.0) Shipped profile matrix (integrity baseline)
 
