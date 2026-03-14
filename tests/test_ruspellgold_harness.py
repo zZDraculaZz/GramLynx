@@ -157,20 +157,20 @@ def test_ruspellgold_baseline_still_works_without_backend_dependencies(monkeypat
     assert int(stats["total_cases"]) > 0
 
 
-def test_ruspellgold_symspell_v5_improves_over_v4_dictionary(monkeypatch) -> None:
+def test_ruspellgold_symspell_v7_improves_over_v6_dictionary(monkeypatch) -> None:
     if not SYMSPELL_AVAILABLE:
         pytest.skip("symspellpy is not available")
 
-    monkeypatch.setenv("GRAMLYNX_EVAL_DICTIONARY_SOURCE_RU", "app/resources/ru_dictionary_v4.txt")
-    v4 = evaluate_mode("symspell_apply")
+    monkeypatch.setenv("GRAMLYNX_EVAL_DICTIONARY_SOURCE_RU", "app/resources/ru_dictionary_v6.txt")
+    v6 = evaluate_mode("symspell_apply")
 
-    monkeypatch.setenv("GRAMLYNX_EVAL_DICTIONARY_SOURCE_RU", "app/resources/ru_dictionary_v5.txt")
-    v5 = evaluate_mode("symspell_apply")
+    monkeypatch.setenv("GRAMLYNX_EVAL_DICTIONARY_SOURCE_RU", "app/resources/ru_dictionary_v7.txt")
+    v7 = evaluate_mode("symspell_apply")
 
-    assert int(v5["candidate_rejected_no_result_total"]) <= int(v4["candidate_rejected_no_result_total"])
-    assert float(v5["exact_match_pass_rate"]) >= float(v4["exact_match_pass_rate"])
-    assert int(v5["rollback_total"]) == 0
-    assert int(v5["candidate_rejected_unsafe_candidate_total"]) == 0
+    assert int(v7["candidate_rejected_no_result_total"]) <= int(v6["candidate_rejected_no_result_total"])
+    assert float(v7["exact_match_pass_rate"]) >= float(v6["exact_match_pass_rate"])
+    assert int(v7["rollback_total"]) == 0
+    assert int(v7["candidate_rejected_unsafe_candidate_total"]) == 0
 
 
 def test_ruspellgold_backend_comparison_signal_is_informative() -> None:
