@@ -27,6 +27,22 @@ uvicorn app.main:app --reload
 GRAMLYNX_CONFIG_YAML=./config.smart_baseline_staging.yml uvicorn app.main:app --reload
 ```
 
+Shadow-first запуск (candidate apply выключен):
+
+```bash
+GRAMLYNX_CONFIG_YAML=./config.smart_baseline_shadow_staging.yml uvicorn app.main:app --reload
+```
+
+Подробная rollout-политика: `docs/shadow_first_rollout_policy.md`.
+
+## 2.0) Shipped profile matrix (integrity baseline)
+
+| Profile | Intended use | Key toggles | Notes |
+|---|---|---|---|
+| `config.example.yml` | safe default local run | `enable_candidate_generation_ru: false` | baseline-safe default OFF |
+| `config.smart_baseline_shadow_staging.yml` | shadow-first staging | `enable_candidate_generation_ru: true`, `candidate_shadow_mode_ru: true` | evaluate candidates without apply |
+| `config.smart_baseline_staging.yml` | controlled apply staging | `enable_candidate_generation_ru: true`, `candidate_shadow_mode_ru: false` | recommended smart baseline apply profile |
+
 ## 2.1) Dockerized smart baseline profile
 
 ```bash
@@ -78,6 +94,67 @@ python scripts/smoke_smart_baseline.py
 python tests/review_pilot_corpus.py
 ```
 
+## 4.2) Product usefulness regression pack
+
+Локальная проверка компактного acceptance-набора user-like RU текстов:
+
+```bash
+pytest -q tests/test_product_regression_pack.py
+```
+
+Dataset: `tests/cases/product_regression_user_texts.yml`.
+
+## 4.3) Manual review pack generator (high-signal)
+
+Собрать компактный human-review пакет из существующих eval/benchmark sources:
+
+```bash
+python tests/generate_manual_review_pack.py --config config.smart_baseline_staging.yml --limit 40
+```
+
+Результаты по умолчанию:
+- `manual_review_pack.jsonl`
+- `manual_review_pack.md`
+
+Стабильная taxonomy reason buckets (`why_in_pack`):
+- `rollback_related`
+- `candidate_rejected_unsafe`
+- `candidate_ambiguous`
+- `candidate_generated_not_applied`
+- `expected_mismatch`
+- `user_visible_change`
+- `protected_context_case`
+- `complex_user_like`
+
+Интерпретация перед rollout/apply:
+- risk buckets: `rollback_related`, `candidate_rejected_unsafe`, `candidate_ambiguous`, `expected_mismatch`, `protected_context_case`;
+- expected smart-improvement buckets: `candidate_generated_not_applied`, `user_visible_change`, `complex_user_like`;
+- в markdown summary смотрите counts per reason и primary/secondary reasons по кейсам.
+
+Когда запускать:
+- перед controlled apply,
+- перед promotion decision,
+- после изменения baseline-конфига или rollout-фазы.
+
+## 4.4) Product delta report (safe default vs smart baseline)
+
+Сравнение на одном и том же product acceptance pack:
+
+```bash
+python tests/generate_product_delta_report.py --cases tests/cases/product_regression_user_texts.yml --safe-config config.example.yml --smart-config config.smart_baseline_staging.yml
+```
+
+Результаты по умолчанию:
+- `product_delta_report.jsonl`
+- `product_delta_report.md`
+
+Использование перед controlled apply / promotion:
+- посмотреть, какие кейсы меняются только в smart baseline,
+- сравнить `smart_expected_matches` vs `safe_expected_matches`,
+- выделить `cases_needing_human_look` для ручного решения,
+- сопоставить delta-cases с taxonomy из manual review pack (`why_in_pack`, primary/secondary reasons).
+
+
 По умолчанию:
 - corpus: `tests/cases/pilot_manual_review.jsonl`
 - report: `pilot_review_report.md`
@@ -106,6 +183,34 @@ python tests/review_pilot_corpus.py --corpus ./my_pilot.jsonl --report ./my_pilo
 - artifact `docker-smart-baseline-smoke-<run_id>` содержит краткий summary:
   - `docker_smart_baseline_smoke_summary.json`
   - `docker_smart_baseline_smoke_summary.txt`
+
+## 5.2) CI promotion-ready check artifacts
+
+Используйте workflow **`smart-baseline-promotion-check`** (manual/nightly):
+- Actions → `smart-baseline-promotion-check` → Run workflow,
+- отдельный ops-layer job `promotion-summary` использует GitHub Environment `smart-baseline-promotion` (можно добавить manual approval protection rule без deploy-шага),
+- в run смотреть секцию **Artifacts**,
+- artifact `smart-baseline-promotion-summary-<run_id>` содержит:
+  - `smart_baseline_promotion_summary.md`
+  - `smart_baseline_promotion_summary.json`
+
+Promotion summary явно фиксирует:
+- smoke ok / not ok,
+- benchmark/report present / not present,
+- red flags:
+  - `rollback_total > 0`,
+  - `candidate_rejected_unsafe_candidate_total > 0`,
+  - missing artifacts.
+
+## 5.3) Shadow-first rollout sequence
+
+Для безопасного включения candidate generation используйте formal ops-layer policy:
+- `docs/shadow_first_rollout_policy.md`.
+
+Коротко:
+- сначала shadow-only (`candidate_shadow_mode_ru: true`),
+- затем controlled apply (`candidate_shadow_mode_ru: false`) только при зелёных promotion artifacts,
+- при rollback/safety/smoke red flags — откатить фазу rollout.
 
 ## 6) Red flags
 
