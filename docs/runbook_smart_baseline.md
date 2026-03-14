@@ -34,6 +34,7 @@ GRAMLYNX_CONFIG_YAML=./config.smart_baseline_shadow_staging.yml uvicorn app.main
 ```
 
 Подробная rollout-политика: `docs/shadow_first_rollout_policy.md`.
+Compact local operator/demo walkthrough: `docs/smart_baseline_local_review_walkthrough.md`.
 
 ## 2.0) Shipped profile matrix (integrity baseline)
 
@@ -245,6 +246,12 @@ python tests/generate_review_adjudication_record.py --bundle-dir rollout_evidenc
 - сначала `rollout_decision_record.md` (операционный verdict),
 - затем `review_adjudication.md` (формальная human фиксация reviewed/blocking/caution/unresolved),
 - если `blocked` или `needs_follow_up` — не переходить к apply до follow-up.
+
+E2E local contour smoke check (wiring всех operator utilities):
+
+```bash
+pytest -q tests/test_local_rollout_review_flow.py
+```
 
 
 По умолчанию:
