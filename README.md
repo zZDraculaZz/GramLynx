@@ -101,6 +101,7 @@ RulePack в YAML (`rulepack`) задаёт безопасные детермин
 - `typo_map_smart` — более широкий набор замен для smart,
 - `enable_candidate_generation_ru` + `candidate_backend=...` — консервативный fallback-кандидат только для smart (если `typo_map` не сработал); глобальный safe default остаётся `enable_candidate_generation_ru: false` (feature выключен),
 - рекомендуемый стабильный baseline для feature-enabled smart mode: `candidate_backend: symspell`, `dictionary_source_ru: app/resources/ru_dictionary_v7.txt`, `max_candidates_ru: 3`, `max_edit_distance_ru: 1`,
+- при `enable_candidate_generation_ru: true` на старте выполняется fail-closed preflight: проверяются backend/dependency и доступность `dictionary_source_ru`,
 - `candidate_shadow_mode_ru` — evaluation-режим: candidates считаются, но не применяются,
 - `max_candidates_ru` / `max_edit_distance_ru` / `dictionary_source_ru` — строгие лимиты candidate generation,
 - `punctuation.fix_space_before/fix_space_after` — механика пробелов вокруг `, . : ; ! ?`.

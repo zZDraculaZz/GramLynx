@@ -109,7 +109,7 @@ rulepack:
   candidate_backend: symspell  # recommended stable baseline backend when enable_candidate_generation_ru=true
   max_candidates_ru: 3  # conservative recommended baseline threshold
   max_edit_distance_ru: 1  # conservative recommended baseline threshold
-  dictionary_source_ru: app/resources/ru_dictionary_v7.txt  # recommended stable baseline dictionary for feature-enabled smart mode
+  dictionary_source_ru: app/resources/ru_dictionary_v7.txt  # required and startup-validated when enable_candidate_generation_ru=true
   no_touch_strict_ru:
     - ща
     - ваще
