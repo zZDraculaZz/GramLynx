@@ -1,0 +1,9 @@
+# Local staging profile for feature-enabled smart baseline.
+# Safe global default in code/config remains off; this profile is opt-in.
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_shadow_mode_ru: false
+  candidate_backend: symspell
+  max_candidates_ru: 3
+  max_edit_distance_ru: 1
+  dictionary_source_ru: app/resources/ru_dictionary_v7.txt
