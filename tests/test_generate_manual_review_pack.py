@@ -71,12 +71,29 @@ def test_manual_review_pack_generator_on_small_sample(tmp_path) -> None:
     assert "why_in_pack" in first
     assert isinstance(first["why_in_pack"], list)
     assert first["why_in_pack"]
+    assert "primary_reason" in first
+    assert "secondary_reasons" in first
+    allowed = {
+        "rollback_related",
+        "candidate_rejected_unsafe",
+        "candidate_ambiguous",
+        "candidate_generated_not_applied",
+        "expected_mismatch",
+        "user_visible_change",
+        "protected_context_case",
+        "complex_user_like",
+    }
+    assert set(first["why_in_pack"]).issubset(allowed)
+    assert first["primary_reason"] in allowed
+    assert isinstance(first["secondary_reasons"], list)
     assert "source" in first
 
     md = out_md.read_text(encoding="utf-8")
     assert "# Manual Review Pack" in md
     assert "## Cases" in md
-    assert "Selection policy" in md
+    assert "## Review taxonomy (stable reason buckets)" in md
+    assert "## Counts per reason" in md
+    assert "protected_context_case" in md
 
     out = proc.stdout.strip()
     assert "manual review pack summary:" in out

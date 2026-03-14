@@ -116,10 +116,43 @@ python tests/generate_manual_review_pack.py --config config.smart_baseline_stagi
 - `manual_review_pack.jsonl`
 - `manual_review_pack.md`
 
+Стабильная taxonomy reason buckets (`why_in_pack`):
+- `rollback_related`
+- `candidate_rejected_unsafe`
+- `candidate_ambiguous`
+- `candidate_generated_not_applied`
+- `expected_mismatch`
+- `user_visible_change`
+- `protected_context_case`
+- `complex_user_like`
+
+Интерпретация перед rollout/apply:
+- risk buckets: `rollback_related`, `candidate_rejected_unsafe`, `candidate_ambiguous`, `expected_mismatch`, `protected_context_case`;
+- expected smart-improvement buckets: `candidate_generated_not_applied`, `user_visible_change`, `complex_user_like`;
+- в markdown summary смотрите counts per reason и primary/secondary reasons по кейсам.
+
 Когда запускать:
 - перед controlled apply,
 - перед promotion decision,
 - после изменения baseline-конфига или rollout-фазы.
+
+## 4.4) Product delta report (safe default vs smart baseline)
+
+Сравнение на одном и том же product acceptance pack:
+
+```bash
+python tests/generate_product_delta_report.py --cases tests/cases/product_regression_user_texts.yml --safe-config config.example.yml --smart-config config.smart_baseline_staging.yml
+```
+
+Результаты по умолчанию:
+- `product_delta_report.jsonl`
+- `product_delta_report.md`
+
+Использование перед controlled apply / promotion:
+- посмотреть, какие кейсы меняются только в smart baseline,
+- сравнить `smart_expected_matches` vs `safe_expected_matches`,
+- выделить `cases_needing_human_look` для ручного решения,
+- сопоставить delta-cases с taxonomy из manual review pack (`why_in_pack`, primary/secondary reasons).
 
 
 По умолчанию:

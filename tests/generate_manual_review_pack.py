@@ -6,11 +6,11 @@ import contextlib
 import io
 import json
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
-import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -22,6 +22,31 @@ DEFAULT_OUTPUT_JSONL = Path("manual_review_pack.jsonl")
 DEFAULT_OUTPUT_MD = Path("manual_review_pack.md")
 DEFAULT_CONFIG_PATH = Path("config.smart_baseline_staging.yml")
 DEFAULT_PRODUCT_CASES_PATH = Path("tests/cases/product_regression_user_texts.yml")
+
+REVIEW_REASON_ORDER: tuple[str, ...] = (
+    "rollback_related",
+    "candidate_rejected_unsafe",
+    "candidate_ambiguous",
+    "candidate_generated_not_applied",
+    "expected_mismatch",
+    "user_visible_change",
+    "protected_context_case",
+    "complex_user_like",
+)
+REVIEW_REASON_SET = set(REVIEW_REASON_ORDER)
+
+RISK_REASONS: tuple[str, ...] = (
+    "rollback_related",
+    "candidate_rejected_unsafe",
+    "candidate_ambiguous",
+    "expected_mismatch",
+    "protected_context_case",
+)
+EXPECTED_IMPROVEMENT_REASONS: tuple[str, ...] = (
+    "candidate_generated_not_applied",
+    "user_visible_change",
+    "complex_user_like",
+)
 
 
 @dataclass(frozen=True)
@@ -41,6 +66,15 @@ class ReviewOutcome:
     category: str | None
     reasons: tuple[str, ...]
     stats: dict[str, int | bool]
+
+
+# Reuse the same value taxonomy as delta report utility to keep interpretation stable.
+DELTA_REASON_SET: tuple[str, ...] = (
+    "smart_improves_expected_match",
+    "smart_regresses_expected_match",
+    "both_match_expected_but_different_output",
+    "profile_outputs_differ_need_human_review",
+)
 
 
 def _load_product_cases(path: Path) -> tuple[ReviewInputCase, ...]:
@@ -159,23 +193,14 @@ def _extract_reasons(case: ReviewInputCase, output_text: str, stats: dict[str, i
     if case.expected_clean_text is not None and output_text != case.expected_clean_text:
         reasons.append("expected_mismatch")
     if case.source == "product_regression_pack" and case.category in {"protected zones", "wrapped/no-touch"}:
+        reasons.append("protected_context_case")
         reasons.append("complex_user_like")
 
     if not reasons:
         return ()
 
-    # preserve deterministic ordering and de-duplicate if multiple conditions append same reason.
-    order = [
-        "rollback_related",
-        "candidate_rejected_unsafe",
-        "candidate_ambiguous",
-        "candidate_generated_not_applied",
-        "expected_mismatch",
-        "user_visible_change",
-        "complex_user_like",
-    ]
-    unique = {r for r in reasons}
-    return tuple(r for r in order if r in unique)
+    unique = {r for r in reasons if r in REVIEW_REASON_SET}
+    return tuple(r for r in REVIEW_REASON_ORDER if r in unique)
 
 
 def _evaluate_cases(cases: tuple[ReviewInputCase, ...]) -> tuple[ReviewOutcome, ...]:
@@ -214,15 +239,7 @@ def _evaluate_cases(cases: tuple[ReviewInputCase, ...]) -> tuple[ReviewOutcome, 
 
 
 def _priority(outcome: ReviewOutcome) -> tuple[int, int]:
-    reason_order = {
-        "rollback_related": 0,
-        "candidate_rejected_unsafe": 1,
-        "candidate_ambiguous": 2,
-        "candidate_generated_not_applied": 3,
-        "expected_mismatch": 4,
-        "user_visible_change": 5,
-        "complex_user_like": 6,
-    }
+    reason_order = {reason: idx for idx, reason in enumerate(REVIEW_REASON_ORDER)}
     top = min(reason_order[r] for r in outcome.reasons)
     return (top, len(outcome.input_text))
 
@@ -260,6 +277,11 @@ def build_manual_review_pack(
         outcomes.sort(key=_priority)
         selected = outcomes[:limit]
 
+        reason_counts = {reason: 0 for reason in REVIEW_REASON_ORDER}
+        for item in selected:
+            for reason in item.reasons:
+                reason_counts[reason] += 1
+
         output_jsonl.parent.mkdir(parents=True, exist_ok=True)
         output_md.parent.mkdir(parents=True, exist_ok=True)
 
@@ -269,6 +291,8 @@ def build_manual_review_pack(
                     "input_text": item.input_text,
                     "output_text": item.output_text,
                     "expected_clean_text": item.expected_clean_text,
+                    "primary_reason": item.reasons[0],
+                    "secondary_reasons": list(item.reasons[1:]),
                     "why_in_pack": list(item.reasons),
                     "source": item.source,
                     "category": item.category,
@@ -286,18 +310,23 @@ def build_manual_review_pack(
             f"- total_candidates_scanned: {len(cases)}",
             f"- selected_high_signal_cases: {len(selected)}",
             "",
-            "## Selection policy",
+            "## Review taxonomy (stable reason buckets)",
             "",
-            "High-signal reasons:",
-            "- rollback_related",
-            "- candidate_rejected_unsafe",
-            "- candidate_ambiguous",
-            "- candidate_generated_not_applied",
-            "- expected_mismatch",
-            "- user_visible_change",
-            "- complex_user_like",
+            "Risk-oriented buckets:",
+            *[f"- {reason}" for reason in RISK_REASONS],
+            "",
+            "Expected smart-improvement / usefulness buckets:",
+            *[f"- {reason}" for reason in EXPECTED_IMPROVEMENT_REASONS],
+            "",
+            "Delta-report reason alignment (reference values):",
+            *[f"- {reason}" for reason in DELTA_REASON_SET],
+            "",
+            "## Counts per reason",
             "",
         ]
+        for reason in REVIEW_REASON_ORDER:
+            lines.append(f"- {reason}: {reason_counts[reason]}")
+        lines.append("")
 
         if cand_stats is not None or bench_stats is not None:
             lines.extend(["## Aggregated context", ""])
@@ -318,6 +347,8 @@ def build_manual_review_pack(
                     f"### Case {index}",
                     f"- source: `{item.source}`",
                     f"- category: `{item.category}`" if item.category else "- category: _not provided_",
+                    f"- primary_reason: `{item.reasons[0]}`",
+                    f"- secondary_reasons: `{', '.join(item.reasons[1:])}`" if len(item.reasons) > 1 else "- secondary_reasons: _none_",
                     f"- why_in_pack: `{', '.join(item.reasons)}`",
                     "- input_text:",
                     f"  - {item.input_text}",
