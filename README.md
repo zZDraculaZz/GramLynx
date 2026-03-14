@@ -45,7 +45,7 @@ pytest -q
 
 ## Тестирование
 
-Для полного набора тестов (включая safety/fuzz и опциональный morph safety-layer) используйте установку с dev+metrics+morph extras:
+Для полного набора тестов (включая candidate backend tests, safety/fuzz и опциональный morph safety-layer) используйте установку с dev+metrics+morph extras:
 
 ```bash
 pip install -e ".[dev,metrics,morph]"
@@ -63,6 +63,26 @@ Offline evaluation harness for candidate-generation modes:
 python tests/eval_candidate_harness.py
 ```
 
+Offline external RU benchmark harness (RuSpellGold-style layer):
+
+```bash
+python tests/eval_ruspellgold_harness.py
+```
+
+Offline baseline summary report (internal + external harnesses):
+
+```bash
+python tests/report_candidate_baseline.py
+```
+
+CI benchmark/report job:
+- non-blocking workflow `benchmark-report` runs on manual trigger (`workflow_dispatch`) and nightly schedule,
+- uploads artifacts with aggregated outputs from `eval_candidate_harness`, `eval_ruspellgold_harness` and `report_candidate_baseline`.
+
+Можно переопределить путь к benchmark dataset через `GRAMLYNX_RUSPELLGOLD_PATH` (JSONL).
+Для сравнения словарей в harness можно задать `GRAMLYNX_EVAL_DICTIONARY_SOURCE_RU` (например, `app/resources/ru_dictionary_v7.txt`).
+Если выбран backend `rapidfuzz`/`symspell`, а зависимость отсутствует, harness завершится fail-closed ошибкой.
+
 ## Метрики (опционально)
 
 ## YAML-конфигурация (опционально)
@@ -79,7 +99,8 @@ GRAMLYNX_CONFIG_YAML=./config.example.yml uvicorn app.main:app --reload
 RulePack в YAML (`rulepack`) задаёт безопасные детерминированные правки:
 - `typo_map_strict` — более узкий набор замен для strict,
 - `typo_map_smart` — более широкий набор замен для smart,
-- `enable_candidate_generation_ru` + `candidate_backend=...` — консервативный fallback-кандидат только для smart (если `typo_map` не сработал); по текущей evaluation-рекомендации используйте `symspell`, `rapidfuzz` оставляйте как альтернативный/experimental backend,
+- `enable_candidate_generation_ru` + `candidate_backend=...` — консервативный fallback-кандидат только для smart (если `typo_map` не сработал); глобальный safe default остаётся `enable_candidate_generation_ru: false` (feature выключен),
+- рекомендуемый стабильный baseline для feature-enabled smart mode: `candidate_backend: symspell`, `dictionary_source_ru: app/resources/ru_dictionary_v7.txt`, `max_candidates_ru: 3`, `max_edit_distance_ru: 1`,
 - `candidate_shadow_mode_ru` — evaluation-режим: candidates считаются, но не применяются,
 - `max_candidates_ru` / `max_edit_distance_ru` / `dictionary_source_ru` — строгие лимиты candidate generation,
 - `punctuation.fix_space_before/fix_space_after` — механика пробелов вокруг `, . : ; ! ?`.
