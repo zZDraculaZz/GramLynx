@@ -83,6 +83,8 @@ CI benchmark/report job:
 Для сравнения словарей в harness можно задать `GRAMLYNX_EVAL_DICTIONARY_SOURCE_RU` (например, `app/resources/ru_dictionary_v7.txt`).
 Если выбран backend `rapidfuzz`/`symspell`, а зависимость отсутствует, harness завершится fail-closed ошибкой.
 
+Operational runbook: `docs/runbook_smart_baseline.md`.
+
 ## Local staging profile (recommended smart baseline)
 
 Opt-in local staging profile for feature-enabled smart baseline (safe default remains off):
