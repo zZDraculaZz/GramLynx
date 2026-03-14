@@ -27,7 +27,7 @@ from app.core.config import reset_app_config_cache
 from app.core.orchestrator import Orchestrator
 
 
-DEFAULT_EVAL_DICTIONARY_SOURCE = "app/resources/ru_dictionary_v3.txt"
+DEFAULT_EVAL_DICTIONARY_SOURCE = "app/resources/ru_dictionary_v4.txt"
 
 
 @dataclass(frozen=True)
