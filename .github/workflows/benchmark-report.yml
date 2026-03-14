@@ -1,0 +1,42 @@
+name: benchmark-report
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *"
+
+jobs:
+  benchmark-report:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -e ".[dev,metrics,morph]"
+
+      - name: Prepare artifact directory
+        run: mkdir -p benchmark_report_artifacts
+
+      - name: Run internal candidate harness
+        run: python tests/eval_candidate_harness.py > benchmark_report_artifacts/eval_candidate_harness.json
+
+      - name: Run external benchmark harness
+        run: python tests/eval_ruspellgold_harness.py > benchmark_report_artifacts/eval_ruspellgold_harness.json
+
+      - name: Build baseline summary report
+        run: python tests/report_candidate_baseline.py > benchmark_report_artifacts/baseline_report.md
+
+      - name: Upload benchmark/report artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-report-${{ github.run_id }}
+          path: benchmark_report_artifacts/
+          if-no-files-found: error
