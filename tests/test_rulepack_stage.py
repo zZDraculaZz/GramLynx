@@ -774,6 +774,39 @@ rulepack:
     assert first == second == "по-русски"
 
 
+def test_candidate_symspell_blocks_plural_to_singular_drop(monkeypatch, tmp_path) -> None:
+    dictionary = tmp_path / "dict.txt"
+    dictionary.write_text("мир\nкот\nрядом\n", encoding="utf-8")
+    cfg = tmp_path / "rulepack.yml"
+    cfg.write_text(
+        f"""
+policies:
+  smart:
+    enabled_stages: [s1_normalize, s2_segment, s3_spelling, s6_guardrails, s7_assemble]
+    max_changed_char_ratio: 1.0
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_backend: symspell
+  dictionary_source_ru: {dictionary}
+  typo_map_smart_ru: {{}}
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(cfg))
+    reset_app_config_cache()
+    deterministic_spelling._load_ru_dictionary.cache_clear()
+    deterministic_spelling._get_symspell.cache_clear()
+
+    orchestrator = Orchestrator(correlation_id="t")
+    result = orchestrator.clean("миры рядом коты рядом", mode="smart")
+
+    assert result == "миры рядом коты рядом"
+    assert orchestrator.last_run_stats["candidate_applied_count"] == 0
+    assert orchestrator.last_run_stats["candidate_rejected_count"] >= 2
+    assert orchestrator.last_run_stats["candidate_rejected_no_result_count"] >= 2
+    assert orchestrator.last_run_stats["candidate_rejected_unsafe_candidate_count"] == 0
+
+
 def test_candidate_symspell_near_pz_keeps_buffer_and_restore(monkeypatch, tmp_path) -> None:
     dictionary = tmp_path / "dict.txt"
     dictionary.write_text("сегодня\n", encoding="utf-8")
