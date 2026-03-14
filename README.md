@@ -75,6 +75,11 @@ Offline baseline summary report (internal + external harnesses):
 python tests/report_candidate_baseline.py
 ```
 
+CI docker smoke job:
+- non-blocking workflow `docker-smart-baseline-smoke` runs on manual trigger (`workflow_dispatch`) and nightly schedule,
+- builds/starts `app-smart-baseline`, checks `/health`, `/docs`, and safe `/clean` status-only smoke calls,
+- uploads smoke summary artifacts.
+
 CI benchmark/report job:
 - non-blocking workflow `benchmark-report` runs on manual trigger (`workflow_dispatch`) and nightly schedule,
 - uploads artifacts with aggregated outputs from `eval_candidate_harness`, `eval_ruspellgold_harness` and `report_candidate_baseline`.
@@ -82,6 +87,30 @@ CI benchmark/report job:
 Можно переопределить путь к benchmark dataset через `GRAMLYNX_RUSPELLGOLD_PATH` (JSONL).
 Для сравнения словарей в harness можно задать `GRAMLYNX_EVAL_DICTIONARY_SOURCE_RU` (например, `app/resources/ru_dictionary_v7.txt`).
 Если выбран backend `rapidfuzz`/`symspell`, а зависимость отсутствует, harness завершится fail-closed ошибкой.
+
+Operational runbook: `docs/runbook_smart_baseline.md`.
+
+### Dockerized smart baseline profile
+
+Поднять контейнер с recommended smart baseline profile:
+
+```bash
+docker compose --profile smart-baseline up -d app-smart-baseline
+```
+
+Проверки:
+
+```bash
+curl -fsS http://localhost:8001/health
+# docs: http://localhost:8001/docs
+curl -fsS -X POST http://localhost:8001/clean -H "Content-Type: application/json" -d '{"text":"севодня будет встреча","mode":"smart"}'
+```
+
+Остановить профиль:
+
+```bash
+docker compose --profile smart-baseline down
+```
 
 ## Local staging profile (recommended smart baseline)
 
