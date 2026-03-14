@@ -80,6 +80,7 @@ docker compose --profile smart-baseline down
 python tests/eval_candidate_harness.py
 python tests/eval_ruspellgold_harness.py
 python tests/report_candidate_baseline.py
+python -m tests.report_ruspellgold_tuning --output-md ruspellgold_tuning_report.md --output-json ruspellgold_tuning_report.json
 ```
 
 Опционально быстрый локальный smoke:
@@ -156,7 +157,72 @@ python tests/generate_product_delta_report.py --cases tests/cases/product_regres
 - выделить `cases_needing_human_look` для ручного решения,
 - сопоставить delta-cases с taxonomy из manual review pack (`why_in_pack`, primary/secondary reasons).
 
-## 4.5) Local readiness summary (single operator view)
+## 4.5) RuSpellGold tuning report (evidence-driven safe vs smart)
+
+Собрать компактный tuning-oriented отчёт поверх существующего RuSpellGold harness:
+
+```bash
+python -m tests.report_ruspellgold_tuning --output-md ruspellgold_tuning_report.md --output-json ruspellgold_tuning_report.json
+```
+
+Preflight dependencies для полного safe-vs-smart сравнения:
+- `symspellpy`
+- `rapidfuzz`
+
+Если dependency отсутствует, отчёт должен остановиться в fail-closed режиме (это корректный stop-сигнал).
+Без полного safe-vs-smart run tuning-изменения baseline делать нельзя.
+
+Coverage canonical path:
+- по умолчанию harness читает `tests/cases/ruspellgold_benchmark.jsonl`;
+- в репозитории это текущий доступный corpus (34 JSONL rows);
+- для внешнего full-corpus запуска укажите `GRAMLYNX_RUSPELLGOLD_PATH=/path/to/full_corpus.jsonl`;
+- total_cases в отчёте всегда равен числу валидных строк выбранного источника (без silent sampling/truncation).
+
+Пример full-corpus run (внешний dataset):
+
+```bash
+GRAMLYNX_RUSPELLGOLD_PATH=/path/to/full_ruspellgold.jsonl \
+python -m tests.report_ruspellgold_tuning --output-md ruspellgold_tuning_report.md --output-json ruspellgold_tuning_report.json
+```
+
+Что смотреть в отчёте:
+- baseline summary для `safe_default` (`baseline`) и `smart_baseline` (`symspell_apply`);
+- `safe vs smart diff`: прирост/регресс по exact-match и число кейсов с поведенческим delta;
+- outcome buckets (`correct_as_expected`, `unchanged_when_expected_change`, `wrong_change`, `candidate_generated_not_applied`, `unsafe_rejected`, `rollback_related`);
+- `top high-signal mismatch slices` как приоритетные группы для следующего минимального шага.
+
+Как выбирать следующий минимальный шаг:
+- если доминирует `unchanged_when_expected_change` и `candidate_generated_not_applied`, сначала проверяйте узкие словарные/rule-map gaps без изменения архитектуры;
+- если есть `unsafe_rejected`/`rollback_related`, трактуйте это как safety stop: только консервативный fail-closed tuning;
+- используйте финальный блок `recommended next minimal tuning directions` как data-driven hint, а не как автоматическое изменение runtime/config.
+
+### 4.5.1) Plateau decision (current hold state)
+
+Итог зафиксированного post-tuning прогона RuSpellGold для текущего smart baseline:
+- `smart exact_match_pass_count`: `32/34`
+- `smart exact_match_pass_rate`: `0.941176`
+- `wrong_change`: `2`
+- `smart_regresses_expected_match`: `0`
+- `unsafe_rejected`: `0`
+- `rollback_related`: `0`
+
+Последний узкий candidate-path hardening уже применён:
+- блокировка generated plural→singular drop (`миры→мир`, `коты→кот`) как fail-closed no-change guard.
+
+Оставшиеся residual mismatch-кейсы:
+- `калидор пуст` → `каридор пуст` (expected: `коридор пуст`)
+- `сор` → `сон` (expected: `сыр`)
+
+Решение на текущем цикле:
+- remaining mismatches классифицированы как lexical-selection ambiguity;
+- дальнейший micro-tuning сейчас не рекомендован из-за непропорционального риска для корректных случаев;
+- current recommendation: **`no further change recommended`**.
+
+Когда возвращаться к tuning:
+- только после появления новых evidence-сигналов (новый benchmark slice / product cases),
+- и снова через тот же fail-closed цикл (`python -m tests.report_ruspellgold_tuning ...`).
+
+## 4.6) Local readiness summary (single operator view)
 
 Собрать компактный readiness summary из локально доступных сигналов:
 
@@ -176,7 +242,7 @@ python tests/generate_readiness_summary.py --config config.smart_baseline_stagin
 Fail-closed смысл:
 - отсутствие артефактов или пропущенные проверки не дают ложноположительный `ready_for_review`.
 
-## 4.6) Local rollout evidence bundle
+## 4.7) Local rollout evidence bundle
 
 Собрать все ключевые operator-facing артефакты в один bundle directory:
 
@@ -199,7 +265,7 @@ python tests/generate_rollout_evidence_bundle.py --config config.smart_baseline_
 - затем проверить `manifest.json` (`available_artifacts`, `missing_artifacts`, `final_readiness_status`, `warnings`),
 - при missing/failed артефактах считать bundle неполным и не трактовать как готовность к apply.
 
-## 4.7) Local rollout decision record (verdict)
+## 4.8) Local rollout decision record (verdict)
 
 Преобразовать готовый evidence bundle в decision-ready verdict:
 
