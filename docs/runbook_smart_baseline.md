@@ -213,29 +213,45 @@ python -m tests.report_ruspellgold_tuning --output-md ruspellgold_tuning_report_
 
 ### 4.5.1) Plateau decision (current hold state)
 
-Итог зафиксированного post-tuning прогона RuSpellGold для текущего smart baseline:
-- `smart exact_match_pass_count`: `32/34`
-- `smart exact_match_pass_rate`: `0.941176`
-- `wrong_change`: `2`
-- `smart_regresses_expected_match`: `0`
-- `unsafe_rejected`: `0`
-- `rollback_related`: `0`
+Итог зафиксированного post-hardening состояния на RuSpellGold:
 
-Последний узкий candidate-path hardening уже применён:
-- блокировка generated plural→singular drop (`миры→мир`, `коты→кот`) как fail-closed no-change guard.
+Full public local corpus (`tests/cases/ruspellgold_full_public.jsonl`, 1711 кейсов):
+- baseline: `495/1711` (`0.289305`), `wrong_change=173`;
+- symspell_shadow: `495/1711` (`0.289305`), `wrong_change=173`;
+- symspell_apply (после двух узких fail-closed apply guards): `429/1711` (`0.250731`), `wrong_change=408`.
 
-Оставшиеся residual mismatch-кейсы:
-- `калидор пуст` → `каридор пуст` (expected: `коридор пуст`)
-- `сор` → `сон` (expected: `сыр`)
+Delta для smart apply после второго guard:
+- `exact_match_pass_count`: `336 -> 429`;
+- `wrong_change`: `679 -> 408`;
+- `smart_regresses_expected_match`: `166 -> 74`;
+- `unsafe_rejected`: `0 -> 0`;
+- `rollback_related`: `1 -> 1`.
 
-Решение на текущем цикле:
-- remaining mismatches классифицированы как lexical-selection ambiguity;
-- дальнейший micro-tuning сейчас не рекомендован из-за непропорционального риска для корректных случаев;
-- current recommendation: **`no further change recommended`**.
+Subset path (`tests/cases/ruspellgold_benchmark.jsonl`, 34 кейса):
+- smart apply: `30/34`, `wrong_change=1`.
 
-Когда возвращаться к tuning:
-- только после появления новых evidence-сигналов (новый benchmark slice / product cases),
-- и снова через тот же fail-closed цикл (`python -m tests.report_ruspellgold_tuning ...`).
+Текущий operational вывод:
+- smart apply заметно улучшен относительно pre-guard состояния, но всё ещё ниже baseline на full public path;
+- subset уже на нижней границе допустимого диапазона;
+- текущая рекомендация: **hold-state / no further apply micro-tuning now**.
+
+Почему residual slices трактуются по-разному:
+- Slice A: `unchanged_when_expected_change + candidate_rejected_no_result` (580) — это в основном generation/coverage misses (`with_generated=0`, `with_morph_blocked=0`), а не apply regression;
+- Slice B: `unchanged_when_expected_change + candidate_generated_not_applied + candidate_rejected_no_result + morph_blocked` (293) — это осознанная guarded fail-closed зона (`with_generated=293/293`, `with_morph_blocked=293/293`).
+
+### 4.5.2) Next analysis-only step (coverage audit plan, no runtime changes)
+
+Следующий шаг только analysis-only, без изменения runtime/config/rulepack:
+- разобрать residual Slice A как coverage audit backlog;
+- фокус-классы:
+  - `ё/е` restoration;
+  - hyphenation patterns;
+  - punctuation/spacing-only deltas;
+  - frequent typo classes.
+
+Правило текущего цикла:
+- пока не появится новый сильный и безопасный локальный сигнал, runtime apply path не трогаем;
+- любые следующие предложения сначала подтверждаются через тот же fail-closed eval loop (`tests.report_ruspellgold_tuning`, full public + subset).
 
 ## 4.6) Local readiness summary (single operator view)
 
