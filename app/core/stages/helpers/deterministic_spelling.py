@@ -199,6 +199,11 @@ def find_rulepack_replacements(
                 candidate_rejected_count += 1
                 candidate_rejected_unsafe_candidate_count += 1
             continue
+        if from_generator and _is_plural_to_singular_drop(token, replacement):
+            candidate_generated_count = max(0, candidate_generated_count - 1)
+            candidate_rejected_count += 1
+            candidate_rejected_no_result_count += 1
+            continue
 
         if enable_morph_safety_ru and analyzer is not None:
             decision = _morph_decision_ru(token, replacement, analyzer)
@@ -268,6 +273,12 @@ def _safe_ru_token(token: str) -> bool:
     if any(ch.isupper() for ch in token):
         return False
     return bool(re.fullmatch(r"[а-яё]+", token))
+
+
+def _is_plural_to_singular_drop(token: str, candidate: str) -> bool:
+    """Conservative blocker: reject generated edits that only drop trailing plural marker."""
+
+    return len(token) >= 4 and token.endswith(("ы", "и")) and candidate == token[:-1]
 
 
 def _safe_candidate_token(token: str) -> bool:
