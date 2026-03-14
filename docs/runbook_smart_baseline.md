@@ -172,18 +172,33 @@ Preflight dependencies для полного safe-vs-smart сравнения:
 Если dependency отсутствует, отчёт должен остановиться в fail-closed режиме (это корректный stop-сигнал).
 Без полного safe-vs-smart run tuning-изменения baseline делать нельзя.
 
-Coverage canonical path:
-- по умолчанию harness читает `tests/cases/ruspellgold_benchmark.jsonl`;
-- в репозитории это текущий доступный corpus (34 JSONL rows);
-- для внешнего full-corpus запуска укажите `GRAMLYNX_RUSPELLGOLD_PATH=/path/to/full_corpus.jsonl`;
-- total_cases в отчёте всегда равен числу валидных строк выбранного источника (без silent sampling/truncation).
+Coverage canonical paths (subset vs full public local):
+- subset/smoke path (default): `tests/cases/ruspellgold_benchmark.jsonl` (34 rows);
+- full public raw local source: `third_party/ruspellgold/raw/test.json` (vendored, offline);
+- normalized full public JSONL for harness: `tests/cases/ruspellgold_full_public.jsonl`.
 
-Пример full-corpus run (внешний dataset):
+Подготовка full public JSONL (deterministic conversion, без сети):
 
 ```bash
-GRAMLYNX_RUSPELLGOLD_PATH=/path/to/full_ruspellgold.jsonl \
+python -m tests.prepare_ruspellgold_full_public \
+  --raw third_party/ruspellgold/raw/test.json \
+  --out tests/cases/ruspellgold_full_public.jsonl
+```
+
+Запуск subset path (по умолчанию):
+
+```bash
 python -m tests.report_ruspellgold_tuning --output-md ruspellgold_tuning_report.md --output-json ruspellgold_tuning_report.json
 ```
+
+Запуск full local public corpus path:
+
+```bash
+GRAMLYNX_RUSPELLGOLD_PATH=tests/cases/ruspellgold_full_public.jsonl \
+python -m tests.report_ruspellgold_tuning --output-md ruspellgold_tuning_report_full_public.md --output-json ruspellgold_tuning_report_full_public.json
+```
+
+`total_cases` всегда равен числу валидных строк выбранного источника (без silent sampling/truncation).
 
 Что смотреть в отчёте:
 - baseline summary для `safe_default` (`baseline`) и `smart_baseline` (`symspell_apply`);
