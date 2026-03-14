@@ -109,7 +109,7 @@ rulepack:
   candidate_backend: symspell  # recommended when enable_candidate_generation_ru=true; rapidfuzz is alternative/experimental
   max_candidates_ru: 3
   max_edit_distance_ru: 1
-  dictionary_source_ru: app/resources/ru_dictionary_v1.txt
+  dictionary_source_ru: app/resources/ru_dictionary_v1.txt  # set app/resources/ru_dictionary_v4.txt for expanded candidate coverage
   no_touch_strict_ru:
     - ща
     - ваще

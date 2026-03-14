@@ -1,0 +1,34 @@
+{"input_text":"севодня будет дождь","expected_clean_text":"сегодня будет дождь"}
+{"input_text":"порусски пишу","expected_clean_text":"по-русски пишу"}
+{"input_text":"попрежнему жду","expected_clean_text":"по-прежнему жду"}
+{"input_text":"коментарий принят","expected_clean_text":"комментарий принят"}
+{"input_text":"програма обновлена","expected_clean_text":"программа обновлена"}
+{"input_text":"акуратно сложи","expected_clean_text":"аккуратно сложи"}
+{"input_text":"калидор пуст","expected_clean_text":"коридор пуст"}
+{"input_text":"пакупатель доволен","expected_clean_text":"покупатель доволен"}
+{"input_text":"превычка сильная","expected_clean_text":"привычка сильная"}
+{"input_text":"однокласник ответил","expected_clean_text":"одноклассник ответил"}
+{"input_text":"тишена вокруг","expected_clean_text":"тишина вокруг"}
+{"input_text":"кид","expected_clean_text":"кит"}
+{"input_text":"сор","expected_clean_text":"сыр"}
+{"input_text":"котт","expected_clean_text":"кот"}
+{"input_text":"токин","expected_clean_text":"токен"}
+{"input_text":"кар","expected_clean_text":"кар"}
+{"input_text":"@севодня","expected_clean_text":"@севодня"}
+{"input_text":"#севодня","expected_clean_text":"#севодня"}
+{"input_text":"(севодня)","expected_clean_text":"(севодня)"}
+{"input_text":"\"севодня\"","expected_clean_text":"\"севодня\""}
+{"input_text":"/севодня/","expected_clean_text":"/севодня/"}
+{"input_text":"key:севодня","expected_clean_text":"key:севодня"}
+{"input_text":"key_севодня","expected_clean_text":"key_севодня"}
+{"input_text":"кaт","expected_clean_text":"кaт"}
+{"input_text":"кат123","expected_clean_text":"кат123"}
+{"input_text":"кот2","expected_clean_text":"кот2"}
+{"input_text":"https://example.com севодня","expected_clean_text":"https://example.com сегодня"}
+{"input_text":"севодня https://example.com","expected_clean_text":"сегодня https://example.com"}
+{"input_text":"(https://example.com):севодня","expected_clean_text":"(https://example.com):севодня"}
+{"input_text":"mail user@mail.example севодня","expected_clean_text":"mail user@mail.example сегодня"}
+{"input_text":"550e8400-e29b-41d4-a716-446655440000 севодня","expected_clean_text":"550e8400-e29b-41d4-a716-446655440000 сегодня"}
+{"input_text":"миры рядом","expected_clean_text":"миры рядом"}
+{"input_text":"коты рядом","expected_clean_text":"коты рядом"}
+{"input_text":"мирры рядом","expected_clean_text":"мирры рядом"}
