@@ -154,6 +154,98 @@ python tests/generate_product_delta_report.py --cases tests/cases/product_regres
 - выделить `cases_needing_human_look` для ручного решения,
 - сопоставить delta-cases с taxonomy из manual review pack (`why_in_pack`, primary/secondary reasons).
 
+## 4.5) Local readiness summary (single operator view)
+
+Собрать компактный readiness summary из локально доступных сигналов:
+
+```bash
+python tests/generate_readiness_summary.py --config config.smart_baseline_staging.yml --run-product-regression --generate-delta-if-missing --generate-manual-if-missing
+```
+
+Выход:
+- `smart_baseline_readiness_summary.json`
+- `smart_baseline_readiness_summary.md`
+
+Как читать `final_status`:
+- `ready_for_review` — config integrity OK, product regression OK, delta/manual artifacts доступны (present/generated),
+- `review_needed` — есть missing/not_run/drift сигналы, требуется ручная проверка,
+- `not_ready` — fail-closed состояние (например, config fail или product regression fail).
+
+Fail-closed смысл:
+- отсутствие артефактов или пропущенные проверки не дают ложноположительный `ready_for_review`.
+
+## 4.6) Local rollout evidence bundle
+
+Собрать все ключевые operator-facing артефакты в один bundle directory:
+
+```bash
+python tests/generate_rollout_evidence_bundle.py --config config.smart_baseline_staging.yml --run-product-regression
+```
+
+Структура bundle (по умолчанию `rollout_evidence_bundle/smart_baseline_staging/`):
+- `readiness_summary.json`
+- `readiness_summary.md`
+- `product_delta_report.jsonl`
+- `product_delta_report.md`
+- `manual_review_pack.jsonl`
+- `manual_review_pack.md`
+- `manifest.json`
+- `INDEX.md`
+
+Как использовать:
+- сначала открыть `INDEX.md` (human entrypoint),
+- затем проверить `manifest.json` (`available_artifacts`, `missing_artifacts`, `final_readiness_status`, `warnings`),
+- при missing/failed артефактах считать bundle неполным и не трактовать как готовность к apply.
+
+## 4.7) Local rollout decision record (verdict)
+
+Преобразовать готовый evidence bundle в decision-ready verdict:
+
+```bash
+python tests/generate_rollout_decision_record.py --bundle-dir rollout_evidence_bundle/smart_baseline_staging
+```
+
+Выход:
+- `rollout_decision_record.json`
+- `rollout_decision_record.md`
+
+Как читать verdict:
+- `hold_not_ready` — блокирующие сигналы/неполный bundle, apply-review не начинать,
+- `review_before_apply` — нужен дополнительный ручной review,
+- `eligible_for_controlled_apply` — локальные сигналы консистентны для controlled apply review.
+
+Recommended next action:
+- `fix_config_drift`
+- `rerun_product_regression`
+- `inspect_manual_review_pack`
+- `regenerate_missing_artifacts`
+- `proceed_to_controlled_apply_review`
+
+Fail-closed смысл:
+- missing artifacts / warnings / incomplete bundle не дают optimistic verdict.
+
+## 4.8) Review adjudication record (human approval loop)
+
+После ручного review зафиксировать adjudication рядом с bundle:
+
+```bash
+python tests/generate_review_adjudication_record.py --bundle-dir rollout_evidence_bundle/smart_baseline_staging --accepted-case-count 10 --caution-case-count 2 --blocking-case-count 0 --reviewer-notes "manual review complete"
+```
+
+Выход:
+- `review_adjudication.json`
+- `review_adjudication.md`
+
+`review_outcome`:
+- `blocked`
+- `needs_follow_up`
+- `approved_for_controlled_apply_review`
+
+Использование с decision record:
+- сначала `rollout_decision_record.md` (операционный verdict),
+- затем `review_adjudication.md` (формальная human фиксация reviewed/blocking/caution/unresolved),
+- если `blocked` или `needs_follow_up` — не переходить к apply до follow-up.
+
 
 По умолчанию:
 - corpus: `tests/cases/pilot_manual_review.jsonl`
