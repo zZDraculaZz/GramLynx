@@ -56,11 +56,11 @@ def test_candidate_eval_shadow_matches_baseline_and_apply_is_safe() -> None:
 
     # Shadow must remain output-equivalent to baseline.
     assert rapidfuzz_shadow["candidate_applied_total"] == 0
-    assert rapidfuzz_shadow["candidate_shadow_skipped_total"] == rapidfuzz_shadow["candidate_generated_total"]
+    assert int(rapidfuzz_shadow["candidate_shadow_skipped_total"]) + int(rapidfuzz_shadow["candidate_rejected_morph_blocked_total"]) == int(rapidfuzz_shadow["candidate_generated_total"])
     assert rapidfuzz_shadow["exact_match_pass_count"] == baseline["exact_match_pass_count"]
 
     assert symspell_shadow["candidate_applied_total"] == 0
-    assert symspell_shadow["candidate_shadow_skipped_total"] == symspell_shadow["candidate_generated_total"]
+    assert int(symspell_shadow["candidate_shadow_skipped_total"]) + int(symspell_shadow["candidate_rejected_morph_blocked_total"]) == int(symspell_shadow["candidate_generated_total"])
     assert symspell_shadow["exact_match_pass_count"] == baseline["exact_match_pass_count"]
 
     # Apply must stay safety-consistent.
