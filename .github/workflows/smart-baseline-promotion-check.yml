@@ -1,0 +1,286 @@
+name: smart-baseline-promotion-check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * *"
+
+jobs:
+  benchmark-report:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -e ".[dev,metrics,morph]"
+
+      - name: Prepare artifact directory
+        run: mkdir -p benchmark_report_artifacts
+
+      - name: Run internal candidate harness
+        run: python tests/eval_candidate_harness.py > benchmark_report_artifacts/eval_candidate_harness.json
+
+      - name: Run external benchmark harness
+        run: python tests/eval_ruspellgold_harness.py > benchmark_report_artifacts/eval_ruspellgold_harness.json
+
+      - name: Build baseline summary report
+        run: python tests/report_candidate_baseline.py > benchmark_report_artifacts/baseline_report.md
+
+      - name: Upload benchmark/report artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: promotion-benchmark-report-${{ github.run_id }}
+          path: benchmark_report_artifacts/
+          if-no-files-found: error
+
+  docker-smart-baseline-smoke:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and start smart baseline profile
+        run: docker compose --profile smart-baseline up -d --build app-smart-baseline
+
+      - name: Wait for container health endpoint
+        run: |
+          for _ in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/health || true)
+            if [ "$code" = "200" ]; then
+              echo "health endpoint ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "health endpoint timeout"
+          exit 1
+
+      - name: Run dockerized smoke checks and write summary
+        run: |
+          mkdir -p smoke_artifacts
+          health_code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/health || true)
+          docs_code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/docs || true)
+
+          clean_code_1=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H 'Content-Type: application/json' \
+            -X POST http://127.0.0.1:8001/clean \
+            -d '{"text":"севодня будет встреча","mode":"smart"}' || true)
+
+          clean_code_2=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H 'Content-Type: application/json' \
+            -X POST http://127.0.0.1:8001/clean \
+            -d '{"text":"порусски пишу","mode":"smart"}' || true)
+
+          health_ok=false
+          docs_ok=false
+          clean_ok=false
+
+          if [ "$health_code" = "200" ]; then health_ok=true; fi
+          if [ "$docs_code" = "200" ]; then docs_ok=true; fi
+          if [ "$clean_code_1" = "200" ] && [ "$clean_code_2" = "200" ]; then clean_ok=true; fi
+
+          cat > smoke_artifacts/docker_smart_baseline_smoke_summary.json <<EOF
+          {
+            "health_code": ${health_code:-0},
+            "docs_code": ${docs_code:-0},
+            "clean_code_1": ${clean_code_1:-0},
+            "clean_code_2": ${clean_code_2:-0},
+            "health_ok": ${health_ok},
+            "docs_ok": ${docs_ok},
+            "clean_ok": ${clean_ok}
+          }
+          EOF
+
+          cat > smoke_artifacts/docker_smart_baseline_smoke_summary.txt <<EOF
+          docker smart baseline smoke summary
+          health_ok=${health_ok}
+          docs_ok=${docs_ok}
+          clean_ok=${clean_ok}
+          EOF
+
+          if [ "$health_ok" != "true" ] || [ "$docs_ok" != "true" ] || [ "$clean_ok" != "true" ]; then
+            exit 1
+          fi
+
+      - name: Upload smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: promotion-docker-smoke-${{ github.run_id }}
+          path: smoke_artifacts/
+          if-no-files-found: error
+
+      - name: Stop smart baseline profile
+        if: always()
+        run: docker compose --profile smart-baseline down
+
+  promotion-summary:
+    runs-on: ubuntu-latest
+    needs: [benchmark-report, docker-smart-baseline-smoke]
+    if: always()
+    continue-on-error: true
+    environment: smart-baseline-promotion
+    steps:
+      - name: Download benchmark/report artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: promotion-benchmark-report-${{ github.run_id }}
+          path: promotion_inputs/benchmark_report_artifacts
+        continue-on-error: true
+
+      - name: Download docker smoke artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: promotion-docker-smoke-${{ github.run_id }}
+          path: promotion_inputs/smoke_artifacts
+        continue-on-error: true
+
+      - name: Build promotion summary
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          from pathlib import Path
+
+          root = Path("promotion_inputs")
+          benchmark_dir = root / "benchmark_report_artifacts"
+          smoke_dir = root / "smoke_artifacts"
+          out_dir = Path("promotion_artifacts")
+          out_dir.mkdir(parents=True, exist_ok=True)
+
+          benchmark_files = {
+              "eval_candidate_harness.json": benchmark_dir / "eval_candidate_harness.json",
+              "eval_ruspellgold_harness.json": benchmark_dir / "eval_ruspellgold_harness.json",
+              "baseline_report.md": benchmark_dir / "baseline_report.md",
+          }
+          smoke_files = {
+              "docker_smart_baseline_smoke_summary.json": smoke_dir / "docker_smart_baseline_smoke_summary.json",
+              "docker_smart_baseline_smoke_summary.txt": smoke_dir / "docker_smart_baseline_smoke_summary.txt",
+          }
+
+          missing_artifacts = [name for name, path in benchmark_files.items() if not path.exists()]
+          missing_artifacts.extend(name for name, path in smoke_files.items() if not path.exists())
+
+          benchmark_present = len([p for p in benchmark_files.values() if p.exists()]) == len(benchmark_files)
+          smoke_present = len([p for p in smoke_files.values() if p.exists()]) == len(smoke_files)
+
+          smoke_ok = False
+          smoke_payload = {}
+          smoke_json_path = smoke_files["docker_smart_baseline_smoke_summary.json"]
+          if smoke_json_path.exists():
+              smoke_payload = json.loads(smoke_json_path.read_text(encoding="utf-8"))
+              smoke_ok = bool(smoke_payload.get("health_ok")) and bool(smoke_payload.get("docs_ok")) and bool(smoke_payload.get("clean_ok"))
+
+          rollback_total = 0
+          unsafe_total = 0
+
+          def _collect_totals(node: object) -> tuple[int, int]:
+              rb = 0
+              unsafe = 0
+              if isinstance(node, dict):
+                  for key, value in node.items():
+                      if key == "rollback_total":
+                          try:
+                              rb += int(value)
+                          except (TypeError, ValueError):
+                              pass
+                      elif key == "candidate_rejected_unsafe_candidate_total":
+                          try:
+                              unsafe += int(value)
+                          except (TypeError, ValueError):
+                              pass
+                      else:
+                          child_rb, child_unsafe = _collect_totals(value)
+                          rb += child_rb
+                          unsafe += child_unsafe
+              elif isinstance(node, list):
+                  for item in node:
+                      child_rb, child_unsafe = _collect_totals(item)
+                      rb += child_rb
+                      unsafe += child_unsafe
+              return rb, unsafe
+
+          for json_name in ("eval_candidate_harness.json", "eval_ruspellgold_harness.json"):
+              path = benchmark_files[json_name]
+              if path.exists():
+                  payload = json.loads(path.read_text(encoding="utf-8"))
+                  rb, unsafe = _collect_totals(payload)
+                  rollback_total += rb
+                  unsafe_total += unsafe
+
+          red_flags = {
+              "rollback_total_gt_zero": rollback_total > 0,
+              "candidate_rejected_unsafe_candidate_total_gt_zero": unsafe_total > 0,
+              "missing_artifacts": len(missing_artifacts) > 0,
+          }
+
+          promotion_ready = smoke_ok and benchmark_present and not any(red_flags.values())
+
+          summary = {
+              "promotion_ready": promotion_ready,
+              "smoke_ok": smoke_ok,
+              "benchmark_report_present": benchmark_present,
+              "smoke_artifacts_present": smoke_present,
+              "rollback_total": rollback_total,
+              "candidate_rejected_unsafe_candidate_total": unsafe_total,
+              "missing_artifacts": missing_artifacts,
+              "red_flags": red_flags,
+              "smoke_status": {
+                  "health_ok": bool(smoke_payload.get("health_ok", False)),
+                  "docs_ok": bool(smoke_payload.get("docs_ok", False)),
+                  "clean_ok": bool(smoke_payload.get("clean_ok", False)),
+              },
+          }
+
+          (out_dir / "smart_baseline_promotion_summary.json").write_text(
+              json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
+          )
+
+          md_lines = [
+              "# Smart Baseline Promotion Summary",
+              "",
+              f"- promotion_ready: {'yes' if promotion_ready else 'no'}",
+              f"- smoke ok: {'yes' if smoke_ok else 'no'}",
+              f"- benchmark/report present: {'yes' if benchmark_present else 'no'}",
+              f"- smoke artifacts present: {'yes' if smoke_present else 'no'}",
+              "",
+              "## Red flags",
+              "",
+              f"- rollback_total > 0: {'yes' if red_flags['rollback_total_gt_zero'] else 'no'} (value={rollback_total})",
+              f"- candidate_rejected_unsafe_candidate_total > 0: {'yes' if red_flags['candidate_rejected_unsafe_candidate_total_gt_zero'] else 'no'} (value={unsafe_total})",
+              f"- missing artifacts: {'yes' if red_flags['missing_artifacts'] else 'no'}",
+              "",
+              "## Artifact presence",
+              "",
+          ]
+          for name in benchmark_files:
+              md_lines.append(f"- {name}: {'present' if benchmark_files[name].exists() else 'missing'}")
+          for name in smoke_files:
+              md_lines.append(f"- {name}: {'present' if smoke_files[name].exists() else 'missing'}")
+
+          if missing_artifacts:
+              md_lines.extend(["", "## Missing artifacts", ""])
+              for name in missing_artifacts:
+                  md_lines.append(f"- {name}")
+
+          (out_dir / "smart_baseline_promotion_summary.md").write_text("\n".join(md_lines) + "\n", encoding="utf-8")
+          print(json.dumps(summary, ensure_ascii=False))
+          PY
+
+      - name: Upload promotion summary artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smart-baseline-promotion-summary-${{ github.run_id }}
+          path: promotion_artifacts/
+          if-no-files-found: error
