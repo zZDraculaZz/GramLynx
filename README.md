@@ -75,6 +75,14 @@ Offline baseline summary report (internal + external harnesses):
 python tests/report_candidate_baseline.py
 ```
 
+Offline pilot/manual review utility (local artifact):
+
+```bash
+python tests/review_pilot_corpus.py
+```
+
+By default it reads `tests/cases/pilot_manual_review.jsonl` and writes `pilot_review_report.md`.
+
 CI docker smoke job:
 - non-blocking workflow `docker-smart-baseline-smoke` runs on manual trigger (`workflow_dispatch`) and nightly schedule,
 - builds/starts `app-smart-baseline`, checks `/health`, `/docs`, and safe `/clean` status-only smoke calls,

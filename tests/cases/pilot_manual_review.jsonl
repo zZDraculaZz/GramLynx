@@ -1,0 +1,3 @@
+{"input_text":"севодня будет встреча","expected_clean_text":"сегодня будет встреча","tag":"typo","note":"common typo"}
+{"input_text":"порусски пишу","expected_clean_text":"по-русски пишу","tag":"hyphenation"}
+{"input_text":"текст без изменений","expected_clean_text":"текст без изменений","tag":"noop"}

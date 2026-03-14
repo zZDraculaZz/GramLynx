@@ -70,6 +70,24 @@ python tests/report_candidate_baseline.py
 python scripts/smoke_smart_baseline.py
 ```
 
+## 4.1) Pilot/manual review workflow
+
+Локальный pilot review (не observability, а offline artifact):
+
+```bash
+python tests/review_pilot_corpus.py
+```
+
+По умолчанию:
+- corpus: `tests/cases/pilot_manual_review.jsonl`
+- report: `pilot_review_report.md`
+
+Опционально можно передать свои пути:
+
+```bash
+python tests/review_pilot_corpus.py --corpus ./my_pilot.jsonl --report ./my_pilot_report.md
+```
+
 ## 5) CI benchmark artifacts
 
 Используйте workflow **`benchmark-report`** (manual/nightly):
