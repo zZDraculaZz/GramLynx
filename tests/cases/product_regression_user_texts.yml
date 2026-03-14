@@ -1,0 +1,160 @@
+smart:
+  - category: chat/messenger
+    note: punctuation spacing cleanup
+    input: "привет ,как дела ?"
+    expected_clean_text: "привет, как дела?"
+
+  - category: chat/messenger
+    note: common typo fix
+    input: "севодня буду позже"
+    expected_clean_text: "сегодня буду позже"
+
+  - category: chat/messenger
+    note: polite typo fix
+    input: "пажалуста скинь адрес"
+    expected_clean_text: "пожалуйста скинь адрес"
+
+  - category: chat/messenger
+    note: no-touch token should remain unchanged
+    input: "имхо норм"
+    expected_clean_text: "имхо норм"
+
+  - category: chat/messenger
+    note: smart no-touch slang should remain unchanged
+    input: "сорян за опоздание"
+    expected_clean_text: "сорян за опоздание"
+
+  - category: review
+    note: hyphenated russian adverb fix
+    input: "порусски инструкция написана непонятно"
+    expected_clean_text: "по-русски инструкция написана непонятно"
+
+  - category: review
+    note: fixed lexical typo
+    input: "попрежнему не работает"
+    expected_clean_text: "по-прежнему не работает"
+
+  - category: review
+    note: fixed preposition spelling
+    input: "изза этого снял звезду"
+    expected_clean_text: "из-за этого снял звезду"
+
+  - category: form/request
+    note: keep protected phone and fix typo outside
+    input: "мой телефон +7 (999) 123-45-67 ,пажалуста после 18:00"
+    expected_clean_text: "мой телефон +7 (999) 123-45-67 , пожалуйста после 18:00"
+
+  - category: form/request
+    note: keep protected email and fix typo outside
+    input: "почта user@mail.example ,пажалуста ответьте"
+    expected_clean_text: "почта user@mail.example , пожалуйста ответьте"
+
+  - category: short post
+    note: typo + punctuation cleanup
+    input: "севодня отличная погода ,гуляем"
+    expected_clean_text: "сегодня отличная погода, гуляем"
+
+  - category: household typo
+    note: greeting typo fix
+    input: "превет всем"
+    expected_clean_text: "привет всем"
+
+  - category: household typo
+    note: thanks typo fix
+    input: "спосибо за помощь"
+    expected_clean_text: "спасибо за помощь"
+
+  - category: household typo
+    note: question typo + punctuation cleanup
+    input: "кагда начало встречи ?"
+    expected_clean_text: "когда начало встречи?"
+
+  - category: whitespace/punctuation noise
+    note: collapse repeated spaces
+    input: "это   тест   без   паники"
+    expected_clean_text: "это тест без паники"
+
+  - category: whitespace/punctuation noise
+    note: trim line edges without risky rewrite
+    input: "   севодня   "
+    expected_clean_text: "севодня"
+
+  - category: whitespace/punctuation noise
+    note: collapse blank lines
+    input: "первый\n\n\nвторой"
+    expected_clean_text: "первый\n\nвторой"
+
+  - category: protected zones
+    note: do not change typo inside URL
+    input: "смотри https://example.com/севодня и отпишись"
+    expected_clean_text: "смотри https://example.com/севодня и отпишись"
+
+  - category: protected zones
+    note: do not change typo inside email local-part
+    input: "логин севодня@mail.example уже занят"
+    expected_clean_text: "логин севодня@mail.example уже занят"
+
+  - category: protected zones
+    note: keep UUID intact and fix typo outside
+    input: "тикет 550e8400-e29b-41d4-a716-446655440000 создан севодня"
+    expected_clean_text: "тикет 550e8400-e29b-41d4-a716-446655440000 создан сегодня"
+
+  - category: protected zones
+    note: keep issue key intact
+    input: "см ISSUE-42 ,пажалуста"
+    expected_clean_text: "см ISSUE-42 , пожалуйста"
+
+  - category: protected zones
+    note: keep filesystem path intact
+    input: "путь /tmp/севодня.txt не удаляй"
+    expected_clean_text: "путь /tmp/севодня.txt не удаляй"
+
+  - category: wrapped/no-touch
+    note: no-touch prefix for mention
+    input: "напиши @порусски позже"
+    expected_clean_text: "напиши @порусски позже"
+
+  - category: wrapped/no-touch
+    note: no-touch prefix for hashtag
+    input: "#севодня был стрим"
+    expected_clean_text: "#севодня был стрим"
+
+  - category: protected zones
+    note: keep code block unchanged and fix typo outside
+    input: "код ```print('севодня')``` пажалуста"
+    expected_clean_text: "код ```print('севодня')``` пожалуйста"
+
+  - category: protected zones
+    note: keep date/time intact and fix typo outside
+    input: "встреча 2026-03-14 в 18:30 севодня"
+    expected_clean_text: "встреча 2026-03-14 в 18:30 сегодня"
+
+  - category: household typo
+    note: ambiguous token with suffix should stay unchanged
+    input: "бренд симпотичныйX"
+    expected_clean_text: "бренд симпотичныйX"
+
+  - category: household typo
+    note: hyphenated pronoun fix
+    input: "ктото позвонил"
+    expected_clean_text: "кто-то позвонил"
+
+  - category: household typo
+    note: hyphenated adverb fix
+    input: "почемуто не грузит"
+    expected_clean_text: "почему-то не грузит"
+
+  - category: short post
+    note: language adverb fixes
+    input: "поанглийски и понемецки читаю"
+    expected_clean_text: "по-английски и по-немецки читаю"
+
+  - category: household typo
+    note: fixed lexical typo
+    input: "нечайно удалил файл"
+    expected_clean_text: "нечаянно удалил файл"
+
+  - category: household typo
+    note: uncertain typo should remain unchanged
+    input: "жызнь прекрасна ,правда ?"
+    expected_clean_text: "жызнь прекрасна ,правда ?"

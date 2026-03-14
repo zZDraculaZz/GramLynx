@@ -83,6 +83,14 @@ python tests/review_pilot_corpus.py
 
 By default it reads `tests/cases/pilot_manual_review.jsonl` and writes `pilot_review_report.md`.
 
+Product usefulness regression pack (user-like RU texts, exact-match acceptance):
+
+```bash
+pytest -q tests/test_product_regression_pack.py
+```
+
+Dataset: `tests/cases/product_regression_user_texts.yml`.
+
 CI docker smoke job:
 - non-blocking workflow `docker-smart-baseline-smoke` runs on manual trigger (`workflow_dispatch`) and nightly schedule,
 - builds/starts `app-smart-baseline`, checks `/health`, `/docs`, and safe `/clean` status-only smoke calls,
@@ -92,11 +100,19 @@ CI benchmark/report job:
 - non-blocking workflow `benchmark-report` runs on manual trigger (`workflow_dispatch`) and nightly schedule,
 - uploads artifacts with aggregated outputs from `eval_candidate_harness`, `eval_ruspellgold_harness` and `report_candidate_baseline`.
 
+CI promotion-check job:
+- non-blocking workflow `smart-baseline-promotion-check` runs on manual trigger (`workflow_dispatch`) and nightly schedule,
+- builds promotion summary from benchmark/report + docker smoke artifacts,
+- emits explicit status flags: smoke ok/not ok, benchmark/report present/not present, red flags (`rollback_total > 0`, `candidate_rejected_unsafe_candidate_total > 0`, missing artifacts),
+- uploads `smart_baseline_promotion_summary.md` + `smart_baseline_promotion_summary.json` artifact for formal staging-ready → promotion-ready decision.
+
 Можно переопределить путь к benchmark dataset через `GRAMLYNX_RUSPELLGOLD_PATH` (JSONL).
 Для сравнения словарей в harness можно задать `GRAMLYNX_EVAL_DICTIONARY_SOURCE_RU` (например, `app/resources/ru_dictionary_v7.txt`).
 Если выбран backend `rapidfuzz`/`symspell`, а зависимость отсутствует, harness завершится fail-closed ошибкой.
 
 Operational runbook: `docs/runbook_smart_baseline.md`.
+
+Shadow-first rollout policy: `docs/shadow_first_rollout_policy.md`.
 
 ### Dockerized smart baseline profile
 
@@ -126,6 +142,12 @@ Opt-in local staging profile for feature-enabled smart baseline (safe default re
 
 ```bash
 GRAMLYNX_CONFIG_YAML=./config.smart_baseline_staging.yml uvicorn app.main:app --reload
+```
+
+Shadow-first staging profile (candidate generation ON, apply OFF):
+
+```bash
+GRAMLYNX_CONFIG_YAML=./config.smart_baseline_shadow_staging.yml uvicorn app.main:app --reload
 ```
 
 Quick smoke check (startup + `/health` + 3 safe `/clean` requests):
