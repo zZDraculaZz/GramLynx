@@ -83,6 +83,20 @@ CI benchmark/report job:
 Для сравнения словарей в harness можно задать `GRAMLYNX_EVAL_DICTIONARY_SOURCE_RU` (например, `app/resources/ru_dictionary_v7.txt`).
 Если выбран backend `rapidfuzz`/`symspell`, а зависимость отсутствует, harness завершится fail-closed ошибкой.
 
+## Local staging profile (recommended smart baseline)
+
+Opt-in local staging profile for feature-enabled smart baseline (safe default remains off):
+
+```bash
+GRAMLYNX_CONFIG_YAML=./config.smart_baseline_staging.yml uvicorn app.main:app --reload
+```
+
+Quick smoke check (startup + `/health` + 3 safe `/clean` requests):
+
+```bash
+python scripts/smoke_smart_baseline.py
+```
+
 ## Метрики (опционально)
 
 ## YAML-конфигурация (опционально)
