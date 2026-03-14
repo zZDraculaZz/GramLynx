@@ -163,6 +163,34 @@ rulepack:
     assert cfg.rulepack.dictionary_source_ru == "app/resources/ru_dictionary_v7.txt"
 
 
+def test_shadow_first_symspell_v7_profile_can_be_loaded_from_yaml(monkeypatch, tmp_path) -> None:
+    config_file = tmp_path / "shadow_first_symspell_v7_profile.yml"
+    config_file.write_text(
+        """
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_shadow_mode_ru: true
+  candidate_backend: symspell
+  max_candidates_ru: 3
+  max_edit_distance_ru: 1
+  dictionary_source_ru: app/resources/ru_dictionary_v7.txt
+""",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(config_file))
+    monkeypatch.setattr(config_module.importlib.util, "find_spec", lambda name: object() if name == "symspellpy" else None)
+    reset_app_config_cache()
+
+    cfg = load_app_config()
+    assert cfg.rulepack.enable_candidate_generation_ru is True
+    assert cfg.rulepack.candidate_shadow_mode_ru is True
+    assert cfg.rulepack.candidate_backend == "symspell"
+    assert cfg.rulepack.max_candidates_ru == 3
+    assert cfg.rulepack.max_edit_distance_ru == 1
+    assert cfg.rulepack.dictionary_source_ru == "app/resources/ru_dictionary_v7.txt"
+
+
 def test_candidate_preflight_fail_closed_when_backend_dependency_missing(monkeypatch, tmp_path) -> None:
     config_file = tmp_path / "candidate_preflight_missing_backend.yml"
     config_file.write_text(
