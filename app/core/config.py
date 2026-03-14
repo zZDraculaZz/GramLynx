@@ -1,6 +1,7 @@
 """Application configuration loading from YAML with strict validation."""
 from __future__ import annotations
 
+import importlib.util
 import os
 from functools import lru_cache
 from pathlib import Path
@@ -167,6 +168,33 @@ def _read_yaml(path: str) -> dict[str, Any]:
     return raw
 
 
+def _validate_candidate_preflight(config: AppConfig) -> None:
+    rp = config.rulepack
+    if rp.enable_candidate_generation_ru is not True:
+        return
+
+    allowed_backends = {"symspell", "rapidfuzz"}
+    if rp.candidate_backend not in allowed_backends:
+        raise ConfigError("Invalid config YAML: candidate backend must be one of: symspell, rapidfuzz")
+
+    module_name = "symspellpy" if rp.candidate_backend == "symspell" else "rapidfuzz"
+    if importlib.util.find_spec(module_name) is None:
+        raise ConfigError(f"Invalid config YAML: candidate backend dependency missing: {module_name}")
+
+    source = rp.dictionary_source_ru.strip()
+    if not source:
+        raise ConfigError("Invalid config YAML: dictionary_source_ru is required when candidate generation is enabled")
+
+    source_path = Path(source)
+    if not source_path.exists() or not source_path.is_file():
+        raise ConfigError("Invalid config YAML: dictionary_source_ru path not found")
+
+    try:
+        source_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise ConfigError("Invalid config YAML: dictionary_source_ru is not readable") from exc
+
+
 @lru_cache(maxsize=1)
 def load_app_config() -> AppConfig:
     config_path = os.getenv("GRAMLYNX_CONFIG_YAML")
@@ -183,6 +211,7 @@ def load_app_config() -> AppConfig:
         raise ConfigError(f"Invalid config YAML: validation_failed at {loc} ({err_type})") from exc
 
     _validate_stages(cfg)
+    _validate_candidate_preflight(cfg)
     return cfg
 
 

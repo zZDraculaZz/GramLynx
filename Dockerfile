@@ -7,6 +7,7 @@ WORKDIR /app
 
 COPY pyproject.toml README.md ./
 COPY app ./app
+COPY config.smart_baseline_staging.yml ./
 
 RUN pip install --no-cache-dir -e .
 

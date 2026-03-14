@@ -1,0 +1,89 @@
+name: docker-smart-baseline-smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 3 * * *"
+
+jobs:
+  docker-smart-baseline-smoke:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and start smart baseline profile
+        run: docker compose --profile smart-baseline up -d --build app-smart-baseline
+
+      - name: Wait for container health endpoint
+        run: |
+          for _ in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/health || true)
+            if [ "$code" = "200" ]; then
+              echo "health endpoint ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "health endpoint timeout"
+          exit 1
+
+      - name: Run dockerized smoke checks and write summary
+        run: |
+          mkdir -p smoke_artifacts
+          health_code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/health || true)
+          docs_code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/docs || true)
+
+          clean_code_1=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H 'Content-Type: application/json' \
+            -X POST http://127.0.0.1:8001/clean \
+            -d '{"text":"севодня будет встреча","mode":"smart"}' || true)
+
+          clean_code_2=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H 'Content-Type: application/json' \
+            -X POST http://127.0.0.1:8001/clean \
+            -d '{"text":"порусски пишу","mode":"smart"}' || true)
+
+          health_ok=false
+          docs_ok=false
+          clean_ok=false
+
+          if [ "$health_code" = "200" ]; then health_ok=true; fi
+          if [ "$docs_code" = "200" ]; then docs_ok=true; fi
+          if [ "$clean_code_1" = "200" ] && [ "$clean_code_2" = "200" ]; then clean_ok=true; fi
+
+          cat > smoke_artifacts/docker_smart_baseline_smoke_summary.json <<EOF
+          {
+            "health_code": ${health_code:-0},
+            "docs_code": ${docs_code:-0},
+            "clean_code_1": ${clean_code_1:-0},
+            "clean_code_2": ${clean_code_2:-0},
+            "health_ok": ${health_ok},
+            "docs_ok": ${docs_ok},
+            "clean_ok": ${clean_ok}
+          }
+          EOF
+
+          cat > smoke_artifacts/docker_smart_baseline_smoke_summary.txt <<EOF
+          docker smart baseline smoke summary
+          health_ok=${health_ok}
+          docs_ok=${docs_ok}
+          clean_ok=${clean_ok}
+          EOF
+
+          if [ "$health_ok" != "true" ] || [ "$docs_ok" != "true" ] || [ "$clean_ok" != "true" ]; then
+            exit 1
+          fi
+
+      - name: Upload smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-smart-baseline-smoke-${{ github.run_id }}
+          path: smoke_artifacts/
+          if-no-files-found: error
+
+      - name: Stop smart baseline profile
+        if: always()
+        run: docker compose --profile smart-baseline down

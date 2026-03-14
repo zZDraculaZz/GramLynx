@@ -6,3 +6,12 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
+
+  app-smart-baseline:
+    profiles: ["smart-baseline"]
+    build: .
+    ports:
+      - "8001:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - GRAMLYNX_CONFIG_YAML=/app/config.smart_baseline_staging.yml

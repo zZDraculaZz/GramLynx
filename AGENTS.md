@@ -93,3 +93,18 @@ When working on a task:
 ## Repository-specific priorities
 Current product priority is not generic infra expansion.
 Current priority is safe improvement of Russian text cleaning quality on top of the existing production foundation.
+
+## Current stable baseline
+
+- Safe default remains OFF: `enable_candidate_generation_ru: false`.
+- Recommended feature-enabled smart baseline:
+  - `candidate_backend: symspell`
+  - `dictionary_source_ru: app/resources/ru_dictionary_v7.txt`
+  - `max_candidates_ru: 3`
+  - `max_edit_distance_ru: 1`
+  - `candidate_shadow_mode_ru: false`
+- Candidate path is fail-closed on startup if backend dependency or dictionary is missing.
+- Do not change PZ / buffer / guardrails / rollback without explicit request.
+- Do not add new runtime ML/LLM rewriting to `/clean`.
+- Prefer eval-driven changes; use internal/external harness before changing runtime behavior.
+- Treat v7 as the current stable baseline unless explicitly asked to experiment.
