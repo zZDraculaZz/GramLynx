@@ -35,6 +35,14 @@ GRAMLYNX_CONFIG_YAML=./config.smart_baseline_shadow_staging.yml uvicorn app.main
 
 Подробная rollout-политика: `docs/shadow_first_rollout_policy.md`.
 
+## 2.0) Shipped profile matrix (integrity baseline)
+
+| Profile | Intended use | Key toggles | Notes |
+|---|---|---|---|
+| `config.example.yml` | safe default local run | `enable_candidate_generation_ru: false` | baseline-safe default OFF |
+| `config.smart_baseline_shadow_staging.yml` | shadow-first staging | `enable_candidate_generation_ru: true`, `candidate_shadow_mode_ru: true` | evaluate candidates without apply |
+| `config.smart_baseline_staging.yml` | controlled apply staging | `enable_candidate_generation_ru: true`, `candidate_shadow_mode_ru: false` | recommended smart baseline apply profile |
+
 ## 2.1) Dockerized smart baseline profile
 
 ```bash
@@ -85,6 +93,34 @@ python scripts/smoke_smart_baseline.py
 ```bash
 python tests/review_pilot_corpus.py
 ```
+
+## 4.2) Product usefulness regression pack
+
+Локальная проверка компактного acceptance-набора user-like RU текстов:
+
+```bash
+pytest -q tests/test_product_regression_pack.py
+```
+
+Dataset: `tests/cases/product_regression_user_texts.yml`.
+
+## 4.3) Manual review pack generator (high-signal)
+
+Собрать компактный human-review пакет из существующих eval/benchmark sources:
+
+```bash
+python tests/generate_manual_review_pack.py --config config.smart_baseline_staging.yml --limit 40
+```
+
+Результаты по умолчанию:
+- `manual_review_pack.jsonl`
+- `manual_review_pack.md`
+
+Когда запускать:
+- перед controlled apply,
+- перед promotion decision,
+- после изменения baseline-конфига или rollout-фазы.
+
 
 По умолчанию:
 - corpus: `tests/cases/pilot_manual_review.jsonl`

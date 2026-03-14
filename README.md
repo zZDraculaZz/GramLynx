@@ -83,6 +83,14 @@ python tests/review_pilot_corpus.py
 
 By default it reads `tests/cases/pilot_manual_review.jsonl` and writes `pilot_review_report.md`.
 
+Product usefulness regression pack (user-like RU texts, exact-match acceptance):
+
+```bash
+pytest -q tests/test_product_regression_pack.py
+```
+
+Dataset: `tests/cases/product_regression_user_texts.yml`.
+
 CI docker smoke job:
 - non-blocking workflow `docker-smart-baseline-smoke` runs on manual trigger (`workflow_dispatch`) and nightly schedule,
 - builds/starts `app-smart-baseline`, checks `/health`, `/docs`, and safe `/clean` status-only smoke calls,
