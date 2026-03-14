@@ -106,10 +106,10 @@ rulepack:
     попрежнему: по-прежнему
   enable_candidate_generation_ru: false
   candidate_shadow_mode_ru: false
-  candidate_backend: symspell  # recommended when enable_candidate_generation_ru=true; rapidfuzz is alternative/experimental
-  max_candidates_ru: 3
-  max_edit_distance_ru: 1
-  dictionary_source_ru: app/resources/ru_dictionary_v1.txt  # set app/resources/ru_dictionary_v7.txt for expanded candidate coverage
+  candidate_backend: symspell  # recommended stable baseline backend when enable_candidate_generation_ru=true
+  max_candidates_ru: 3  # conservative recommended baseline threshold
+  max_edit_distance_ru: 1  # conservative recommended baseline threshold
+  dictionary_source_ru: app/resources/ru_dictionary_v7.txt  # recommended stable baseline dictionary for feature-enabled smart mode
   no_touch_strict_ru:
     - ща
     - ваще

@@ -131,3 +131,30 @@ rulepack:
     cfg = load_app_config()
     assert cfg.rulepack.enable_candidate_generation_ru is True
     assert cfg.rulepack.candidate_backend == "symspell"
+
+
+def test_recommended_symspell_v7_baseline_can_be_loaded_from_yaml(monkeypatch, tmp_path) -> None:
+    config_file = tmp_path / "recommended_symspell_v7_baseline.yml"
+    config_file.write_text(
+        """
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_shadow_mode_ru: false
+  candidate_backend: symspell
+  max_candidates_ru: 3
+  max_edit_distance_ru: 1
+  dictionary_source_ru: app/resources/ru_dictionary_v7.txt
+""",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(config_file))
+    reset_app_config_cache()
+
+    cfg = load_app_config()
+    assert cfg.rulepack.enable_candidate_generation_ru is True
+    assert cfg.rulepack.candidate_shadow_mode_ru is False
+    assert cfg.rulepack.candidate_backend == "symspell"
+    assert cfg.rulepack.max_candidates_ru == 3
+    assert cfg.rulepack.max_edit_distance_ru == 1
+    assert cfg.rulepack.dictionary_source_ru == "app/resources/ru_dictionary_v7.txt"
