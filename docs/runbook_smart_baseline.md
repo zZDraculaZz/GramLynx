@@ -80,6 +80,7 @@ docker compose --profile smart-baseline down
 python tests/eval_candidate_harness.py
 python tests/eval_ruspellgold_harness.py
 python tests/report_candidate_baseline.py
+python -m tests.report_ruspellgold_tuning --output-md ruspellgold_tuning_report.md --output-json ruspellgold_tuning_report.json
 ```
 
 Опционально быстрый локальный smoke:
@@ -156,7 +157,103 @@ python tests/generate_product_delta_report.py --cases tests/cases/product_regres
 - выделить `cases_needing_human_look` для ручного решения,
 - сопоставить delta-cases с taxonomy из manual review pack (`why_in_pack`, primary/secondary reasons).
 
-## 4.5) Local readiness summary (single operator view)
+## 4.5) RuSpellGold tuning report (evidence-driven safe vs smart)
+
+Собрать компактный tuning-oriented отчёт поверх существующего RuSpellGold harness:
+
+```bash
+python -m tests.report_ruspellgold_tuning --output-md ruspellgold_tuning_report.md --output-json ruspellgold_tuning_report.json
+```
+
+Preflight dependencies для полного safe-vs-smart сравнения:
+- `symspellpy`
+- `rapidfuzz`
+
+Если dependency отсутствует, отчёт должен остановиться в fail-closed режиме (это корректный stop-сигнал).
+Без полного safe-vs-smart run tuning-изменения baseline делать нельзя.
+
+Coverage canonical paths (subset vs full public local):
+- subset/smoke path (default): `tests/cases/ruspellgold_benchmark.jsonl` (34 rows);
+- full public raw local source: `third_party/ruspellgold/raw/test.json` (vendored, offline);
+- normalized full public JSONL for harness: `tests/cases/ruspellgold_full_public.jsonl`.
+
+Подготовка full public JSONL (deterministic conversion, без сети):
+
+```bash
+python -m tests.prepare_ruspellgold_full_public \
+  --raw third_party/ruspellgold/raw/test.json \
+  --out tests/cases/ruspellgold_full_public.jsonl
+```
+
+Запуск subset path (по умолчанию):
+
+```bash
+python -m tests.report_ruspellgold_tuning --output-md ruspellgold_tuning_report.md --output-json ruspellgold_tuning_report.json
+```
+
+Запуск full local public corpus path:
+
+```bash
+GRAMLYNX_RUSPELLGOLD_PATH=tests/cases/ruspellgold_full_public.jsonl \
+python -m tests.report_ruspellgold_tuning --output-md ruspellgold_tuning_report_full_public.md --output-json ruspellgold_tuning_report_full_public.json
+```
+
+`total_cases` всегда равен числу валидных строк выбранного источника (без silent sampling/truncation).
+
+Что смотреть в отчёте:
+- baseline summary для `safe_default` (`baseline`) и `smart_baseline` (`symspell_apply`);
+- `safe vs smart diff`: прирост/регресс по exact-match и число кейсов с поведенческим delta;
+- outcome buckets (`correct_as_expected`, `unchanged_when_expected_change`, `wrong_change`, `candidate_generated_not_applied`, `unsafe_rejected`, `rollback_related`);
+- `top high-signal mismatch slices` как приоритетные группы для следующего минимального шага.
+
+Как выбирать следующий минимальный шаг:
+- если доминирует `unchanged_when_expected_change` и `candidate_generated_not_applied`, сначала проверяйте узкие словарные/rule-map gaps без изменения архитектуры;
+- если есть `unsafe_rejected`/`rollback_related`, трактуйте это как safety stop: только консервативный fail-closed tuning;
+- используйте финальный блок `recommended next minimal tuning directions` как data-driven hint, а не как автоматическое изменение runtime/config.
+
+### 4.5.1) Plateau decision (current hold state)
+
+Итог зафиксированного post-hardening состояния на RuSpellGold:
+
+Full public local corpus (`tests/cases/ruspellgold_full_public.jsonl`, 1711 кейсов):
+- baseline: `495/1711` (`0.289305`), `wrong_change=173`;
+- symspell_shadow: `495/1711` (`0.289305`), `wrong_change=173`;
+- symspell_apply (после двух узких fail-closed apply guards): `429/1711` (`0.250731`), `wrong_change=408`.
+
+Delta для smart apply после второго guard:
+- `exact_match_pass_count`: `336 -> 429`;
+- `wrong_change`: `679 -> 408`;
+- `smart_regresses_expected_match`: `166 -> 74`;
+- `unsafe_rejected`: `0 -> 0`;
+- `rollback_related`: `1 -> 1`.
+
+Subset path (`tests/cases/ruspellgold_benchmark.jsonl`, 34 кейса):
+- smart apply: `30/34`, `wrong_change=1`.
+
+Текущий operational вывод:
+- smart apply заметно улучшен относительно pre-guard состояния, но всё ещё ниже baseline на full public path;
+- subset уже на нижней границе допустимого диапазона;
+- текущая рекомендация: **hold-state / no further apply micro-tuning now**.
+
+Почему residual slices трактуются по-разному:
+- Slice A: `unchanged_when_expected_change + candidate_rejected_no_result` (580) — это в основном generation/coverage misses (`with_generated=0`, `with_morph_blocked=0`), а не apply regression;
+- Slice B: `unchanged_when_expected_change + candidate_generated_not_applied + candidate_rejected_no_result + morph_blocked` (293) — это осознанная guarded fail-closed зона (`with_generated=293/293`, `with_morph_blocked=293/293`).
+
+### 4.5.2) Next analysis-only step (coverage audit plan, no runtime changes)
+
+Следующий шаг только analysis-only, без изменения runtime/config/rulepack:
+- разобрать residual Slice A как coverage audit backlog;
+- фокус-классы:
+  - `ё/е` restoration;
+  - hyphenation patterns;
+  - punctuation/spacing-only deltas;
+  - frequent typo classes.
+
+Правило текущего цикла:
+- пока не появится новый сильный и безопасный локальный сигнал, runtime apply path не трогаем;
+- любые следующие предложения сначала подтверждаются через тот же fail-closed eval loop (`tests.report_ruspellgold_tuning`, full public + subset).
+
+## 4.6) Local readiness summary (single operator view)
 
 Собрать компактный readiness summary из локально доступных сигналов:
 
@@ -176,7 +273,7 @@ python tests/generate_readiness_summary.py --config config.smart_baseline_stagin
 Fail-closed смысл:
 - отсутствие артефактов или пропущенные проверки не дают ложноположительный `ready_for_review`.
 
-## 4.6) Local rollout evidence bundle
+## 4.7) Local rollout evidence bundle
 
 Собрать все ключевые operator-facing артефакты в один bundle directory:
 
@@ -199,7 +296,7 @@ python tests/generate_rollout_evidence_bundle.py --config config.smart_baseline_
 - затем проверить `manifest.json` (`available_artifacts`, `missing_artifacts`, `final_readiness_status`, `warnings`),
 - при missing/failed артефактах считать bundle неполным и не трактовать как готовность к apply.
 
-## 4.7) Local rollout decision record (verdict)
+## 4.8) Local rollout decision record (verdict)
 
 Преобразовать готовый evidence bundle в decision-ready verdict:
 
