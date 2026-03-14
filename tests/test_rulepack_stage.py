@@ -138,9 +138,25 @@ rulepack:
 
 
 class _FakeParse:
-    def __init__(self, is_known: bool, score: float) -> None:
+    def __init__(
+        self,
+        is_known: bool,
+        score: float,
+        *,
+        pos: str | None = None,
+        normal_form: str | None = None,
+        grammemes: set[str] | None = None,
+    ) -> None:
         self.is_known = is_known
         self.score = score
+        self.normal_form = normal_form
+
+        class _Tag:
+            def __init__(self, pos_value: str | None, grammemes_value: set[str] | None) -> None:
+                self.POS = pos_value
+                self.grammemes = set(grammemes_value or set())
+
+        self.tag = _Tag(pos, grammemes)
 
 
 class _FakeMorphAnalyzer:
@@ -772,6 +788,209 @@ rulepack:
     first = orchestrator.clean("порусски", mode="smart")
     second = orchestrator.clean("порусски", mode="smart")
     assert first == second == "по-русски"
+
+
+def test_candidate_symspell_blocks_plural_to_singular_drop(monkeypatch, tmp_path) -> None:
+    dictionary = tmp_path / "dict.txt"
+    dictionary.write_text("мир\nкот\nрядом\n", encoding="utf-8")
+    cfg = tmp_path / "rulepack.yml"
+    cfg.write_text(
+        f"""
+policies:
+  smart:
+    enabled_stages: [s1_normalize, s2_segment, s3_spelling, s6_guardrails, s7_assemble]
+    max_changed_char_ratio: 1.0
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_backend: symspell
+  dictionary_source_ru: {dictionary}
+  typo_map_smart_ru: {{}}
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(cfg))
+    reset_app_config_cache()
+    deterministic_spelling._load_ru_dictionary.cache_clear()
+    deterministic_spelling._get_symspell.cache_clear()
+
+    orchestrator = Orchestrator(correlation_id="t")
+    result = orchestrator.clean("миры рядом коты рядом", mode="smart")
+
+    assert result == "миры рядом коты рядом"
+    assert orchestrator.last_run_stats["candidate_applied_count"] == 0
+    assert orchestrator.last_run_stats["candidate_rejected_count"] >= 2
+    assert orchestrator.last_run_stats["candidate_rejected_no_result_count"] >= 2
+    assert orchestrator.last_run_stats["candidate_rejected_unsafe_candidate_count"] == 0
+
+
+def test_candidate_symspell_secondary_guard_blocks_short_function_word_drift(monkeypatch, tmp_path) -> None:
+    dictionary = tmp_path / "dict.txt"
+    dictionary.write_text("кот\nсон\nмир\n", encoding="utf-8")
+    cfg = tmp_path / "rulepack.yml"
+    cfg.write_text(
+        f"""
+policies:
+  smart:
+    enabled_stages: [s1_normalize, s2_segment, s3_spelling, s6_guardrails, s7_assemble]
+    max_changed_char_ratio: 1.0
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_backend: symspell
+  dictionary_source_ru: {dictionary}
+  typo_map_smart_ru: {{}}
+  typo_min_token_len: 2
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(cfg))
+    reset_app_config_cache()
+    deterministic_spelling._load_ru_dictionary.cache_clear()
+    deterministic_spelling._get_symspell.cache_clear()
+    deterministic_spelling._get_morph_analyzer.cache_clear()
+
+    mapping = {
+        "от": ("кот", "generated"),
+        "он": ("сон", "generated"),
+        "со": ("сон", "generated"),
+    }
+
+    def _fake_candidate_from_symspell(token: str, **_: object) -> tuple[str | None, str]:
+        return mapping.get(token, (None, "rejected"))
+
+    monkeypatch.setattr(deterministic_spelling, "_candidate_from_symspell", _fake_candidate_from_symspell)
+    monkeypatch.setattr(
+        deterministic_spelling,
+        "_get_morph_analyzer",
+        lambda: _FakeMorphAnalyzer(
+            {
+                "от": [_FakeParse(True, 0.9, pos="PREP", normal_form="от")],
+                "кот": [_FakeParse(True, 0.9, pos="NOUN", normal_form="кот")],
+                "он": [_FakeParse(True, 0.9, pos="NPRO", normal_form="он")],
+                "сон": [_FakeParse(True, 0.9, pos="NOUN", normal_form="сон")],
+                "со": [_FakeParse(True, 0.9, pos="PREP", normal_form="со")],
+                "мир": [_FakeParse(True, 0.9, pos="NOUN", normal_form="мир")],
+            }
+        ),
+    )
+
+    orchestrator = Orchestrator(correlation_id="t")
+    result = orchestrator.clean("от он со мир", mode="smart")
+
+    assert result == "от он со мир"
+    assert orchestrator.last_run_stats["candidate_generated_count"] >= 3
+    assert orchestrator.last_run_stats["candidate_applied_count"] == 0
+    assert orchestrator.last_run_stats["candidate_rejected_morph_blocked_count"] >= 3
+
+
+
+
+def test_candidate_symspell_secondary_guard_blocks_inflection_drift_noun_adj_family(monkeypatch, tmp_path) -> None:
+    dictionary = tmp_path / "dict.txt"
+    dictionary.write_text("случай\nкачество\nпроект\nбудет\n", encoding="utf-8")
+    cfg = tmp_path / "rulepack.yml"
+    cfg.write_text(
+        f"""
+policies:
+  smart:
+    enabled_stages: [s1_normalize, s2_segment, s3_spelling, s6_guardrails, s7_assemble]
+    max_changed_char_ratio: 1.0
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_backend: symspell
+  dictionary_source_ru: {dictionary}
+  typo_map_smart_ru: {{}}
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(cfg))
+    reset_app_config_cache()
+    deterministic_spelling._load_ru_dictionary.cache_clear()
+    deterministic_spelling._get_symspell.cache_clear()
+    deterministic_spelling._get_morph_analyzer.cache_clear()
+
+    mapping = {
+        "случае": ("случай", "generated"),
+        "качестве": ("качество", "generated"),
+        "проекта": ("проект", "generated"),
+        "будут": ("будет", "generated"),
+    }
+
+    def _fake_candidate_from_symspell(token: str, **_: object) -> tuple[str | None, str]:
+        return mapping.get(token, (None, "rejected"))
+
+    monkeypatch.setattr(deterministic_spelling, "_candidate_from_symspell", _fake_candidate_from_symspell)
+    monkeypatch.setattr(
+        deterministic_spelling,
+        "_get_morph_analyzer",
+        lambda: _FakeMorphAnalyzer(
+            {
+                "случае": [_FakeParse(True, 0.9, pos="NOUN", normal_form="случай", grammemes={"NOUN", "loct", "sing"})],
+                "случай": [_FakeParse(True, 0.9, pos="NOUN", normal_form="случай", grammemes={"NOUN", "nomn", "sing"})],
+                "качестве": [_FakeParse(True, 0.9, pos="NOUN", normal_form="качество", grammemes={"NOUN", "loct", "sing"})],
+                "качество": [_FakeParse(True, 0.9, pos="NOUN", normal_form="качество", grammemes={"NOUN", "nomn", "sing"})],
+                "проекта": [_FakeParse(True, 0.9, pos="NOUN", normal_form="проект", grammemes={"NOUN", "gent", "sing"})],
+                "проект": [_FakeParse(True, 0.9, pos="NOUN", normal_form="проект", grammemes={"NOUN", "nomn", "sing"})],
+                "будут": [_FakeParse(True, 0.9, pos="VERB", normal_form="быть", grammemes={"VERB", "plur", "futr"})],
+                "будет": [_FakeParse(True, 0.9, pos="VERB", normal_form="быть", grammemes={"VERB", "sing", "futr"})],
+            }
+        ),
+    )
+
+    orchestrator = Orchestrator(correlation_id="t")
+    result = orchestrator.clean("в случае в качестве проекта будут", mode="smart")
+
+    assert result == "в случае в качестве проекта будет"
+    assert orchestrator.last_run_stats["candidate_generated_count"] >= 4
+    assert orchestrator.last_run_stats["candidate_applied_count"] == 1
+    assert orchestrator.last_run_stats["candidate_rejected_morph_blocked_count"] >= 3
+
+def test_candidate_symspell_secondary_guard_keeps_useful_non_short_apply(monkeypatch, tmp_path) -> None:
+    dictionary = tmp_path / "dict.txt"
+    dictionary.write_text("сегодня\n", encoding="utf-8")
+    cfg = tmp_path / "rulepack.yml"
+    cfg.write_text(
+        f"""
+policies:
+  smart:
+    enabled_stages: [s1_normalize, s2_segment, s3_spelling, s6_guardrails, s7_assemble]
+    max_changed_char_ratio: 1.0
+rulepack:
+  enable_candidate_generation_ru: true
+  candidate_backend: symspell
+  dictionary_source_ru: {dictionary}
+  typo_map_smart_ru: {{}}
+  typo_min_token_len: 2
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GRAMLYNX_CONFIG_YAML", str(cfg))
+    reset_app_config_cache()
+    deterministic_spelling._load_ru_dictionary.cache_clear()
+    deterministic_spelling._get_symspell.cache_clear()
+    deterministic_spelling._get_morph_analyzer.cache_clear()
+
+    monkeypatch.setattr(
+        deterministic_spelling,
+        "_candidate_from_symspell",
+        lambda token, **_: ("сегодня", "generated") if token == "севодня" else (None, "rejected"),
+    )
+    monkeypatch.setattr(
+        deterministic_spelling,
+        "_get_morph_analyzer",
+        lambda: _FakeMorphAnalyzer(
+            {
+                "севодня": [_FakeParse(False, 0.1, pos="NOUN", normal_form="севодня")],
+                "сегодня": [_FakeParse(True, 0.9, pos="NOUN", normal_form="сегодня")],
+            }
+        ),
+    )
+
+    orchestrator = Orchestrator(correlation_id="t")
+    result = orchestrator.clean("севодня", mode="smart")
+
+    assert result == "сегодня"
+    assert orchestrator.last_run_stats["candidate_applied_count"] == 1
+    assert orchestrator.last_run_stats["candidate_rejected_morph_blocked_count"] == 0
 
 
 def test_candidate_symspell_near_pz_keeps_buffer_and_restore(monkeypatch, tmp_path) -> None:

@@ -146,6 +146,7 @@ def find_rulepack_replacements(
     candidate_shadow_skipped_count = 0
 
     analyzer = _get_morph_analyzer() if enable_morph_safety_ru else None
+    secondary_guard_analyzer = _get_morph_analyzer() if enable_candidate_generation_ru else None
 
     for match in pattern.finditer(text):
         token = match.group(0)
@@ -199,6 +200,17 @@ def find_rulepack_replacements(
                 candidate_rejected_count += 1
                 candidate_rejected_unsafe_candidate_count += 1
             continue
+        if from_generator and _is_plural_to_singular_drop(token, replacement):
+            candidate_generated_count = max(0, candidate_generated_count - 1)
+            candidate_rejected_count += 1
+            candidate_rejected_no_result_count += 1
+            continue
+
+        if from_generator and secondary_guard_analyzer is not None:
+            if _is_secondary_apply_guard_block_ru(token, replacement, secondary_guard_analyzer):
+                candidate_rejected_count += 1
+                candidate_rejected_morph_blocked_count += 1
+                continue
 
         if enable_morph_safety_ru and analyzer is not None:
             decision = _morph_decision_ru(token, replacement, analyzer)
@@ -268,6 +280,12 @@ def _safe_ru_token(token: str) -> bool:
     if any(ch.isupper() for ch in token):
         return False
     return bool(re.fullmatch(r"[а-яё]+", token))
+
+
+def _is_plural_to_singular_drop(token: str, candidate: str) -> bool:
+    """Conservative blocker: reject generated edits that only drop trailing plural marker."""
+
+    return len(token) >= 4 and token.endswith(("ы", "и")) and candidate == token[:-1]
 
 
 def _safe_candidate_token(token: str) -> bool:
@@ -469,6 +487,102 @@ def _morph_decision_ru(before: str, after: str, analyzer: Any) -> str:
         return "allowed"
 
     return "unknown"
+
+
+
+
+def _is_stem_close_one_char_suffix_shift(before: str, after: str) -> bool:
+    before_norm = before.lower()
+    after_norm = after.lower()
+    if before_norm == after_norm:
+        return False
+    if len(before_norm) <= 3 or len(after_norm) <= 3:
+        return False
+    if abs(len(before_norm) - len(after_norm)) > 1:
+        return False
+
+    prefix_len = 0
+    for b_char, a_char in zip(before_norm, after_norm):
+        if b_char != a_char:
+            break
+        prefix_len += 1
+
+    min_len = min(len(before_norm), len(after_norm))
+    if prefix_len < (min_len - 1):
+        return False
+
+    before_tail = before_norm[prefix_len:]
+    after_tail = after_norm[prefix_len:]
+    return bool(before_tail or after_tail) and max(len(before_tail), len(after_tail)) <= 2
+
+
+def _primary_case_grammeme(grammemes: set[str]) -> str | None:
+    for case in ("nomn", "gent", "datv", "accs", "ablt", "loct", "voct", "gen1", "gen2", "acc2", "loc1", "loc2"):
+        if case in grammemes:
+            return case
+    return None
+
+
+def _is_inflection_drift_guard_block_ru(before_parse: Any, after_parse: Any, before: str, after: str) -> bool:
+    before_tag = getattr(before_parse, "tag", None)
+    after_tag = getattr(after_parse, "tag", None)
+    before_pos = getattr(before_tag, "POS", None)
+    after_pos = getattr(after_tag, "POS", None)
+
+    if len(before) <= 3:
+        return False
+    if before_pos not in {"NOUN", "ADJF", "ADJS", "PRTF", "PRTS"}:
+        return False
+    if after_pos not in {"NOUN", "ADJF", "ADJS", "PRTF", "PRTS"}:
+        return False
+
+    before_grammemes = set(getattr(before_tag, "grammemes", ()) or ())
+    after_grammemes = set(getattr(after_tag, "grammemes", ()) or ())
+
+    before_number = "sing" if "sing" in before_grammemes else ("plur" if "plur" in before_grammemes else None)
+    after_number = "sing" if "sing" in after_grammemes else ("plur" if "plur" in after_grammemes else None)
+    number_drift = bool(before_number and after_number and before_number != after_number)
+
+    before_case = _primary_case_grammeme(before_grammemes)
+    after_case = _primary_case_grammeme(after_grammemes)
+    case_drift = bool(before_case and after_case and before_case != after_case)
+
+    if not (number_drift or case_drift):
+        return False
+
+    return _is_stem_close_one_char_suffix_shift(before, after)
+
+def _is_secondary_apply_guard_block_ru(before: str, after: str, analyzer: Any) -> bool:
+    before_parses = analyzer.parse(before)
+    after_parses = analyzer.parse(after)
+    if not before_parses or not after_parses:
+        return False
+
+    before_parse = before_parses[0]
+    after_parse = after_parses[0]
+
+    before_tag = getattr(before_parse, "tag", None)
+    after_tag = getattr(after_parse, "tag", None)
+    before_pos = getattr(before_tag, "POS", None)
+    after_pos = getattr(after_tag, "POS", None)
+    before_lemma = getattr(before_parse, "normal_form", None)
+    after_lemma = getattr(after_parse, "normal_form", None)
+
+    if _is_inflection_drift_guard_block_ru(before_parse, after_parse, before, after):
+        return True
+
+    pos_drift = bool(before_pos and after_pos and before_pos != after_pos)
+    lemma_drift = bool(before_lemma and after_lemma and before_lemma != after_lemma)
+    if not (pos_drift or lemma_drift):
+        return False
+
+    if len(before) <= 3:
+        return True
+
+    if before_pos in {"PREP", "CONJ", "PRCL", "INTJ"}:
+        return True
+
+    return False
 
 
 @lru_cache(maxsize=1)
