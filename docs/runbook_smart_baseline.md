@@ -248,11 +248,36 @@ Subset path (`tests/cases/ruspellgold_benchmark.jsonl`, 34 кейса):
   - hyphenation patterns;
   - punctuation/spacing-only deltas;
   - frequent typo classes.
+- consolidated backlog artifact: `docs/slice_a_coverage_atlas.md` (analysis-only atlas, deterministic backlog ordering).
 
 Правило текущего цикла:
 - пока не появится новый сильный и безопасный локальный сигнал, runtime apply path не трогаем;
 - любые следующие предложения сначала подтверждаются через тот же fail-closed eval loop (`tests.report_ruspellgold_tuning`, full public + subset).
 
+
+### 4.5.2.1) Canonical reproduction status (current HEAD)
+
+Важно разделять два слоя истины:
+- historical hold-state snapshot в этом runbook (`429/1711` full public и `30/34` subset);
+- current reproducible harness path на текущем HEAD.
+
+Текущий **canonical reproducible path**:
+- command: `python -m tests.report_ruspellgold_tuning --output-md ruspellgold_tuning_report.md --output-json ruspellgold_tuning_report.json`;
+- mode: `symspell_apply`;
+- runtime config: временный YAML из `tests.eval_ruspellgold_harness._runtime_config(...)`;
+- dataset override: `GRAMLYNX_RUSPELLGOLD_PATH`;
+- dictionary override: `GRAMLYNX_EVAL_DICTIONARY_SOURCE_RU` (если не задан, используется `app/resources/ru_dictionary_v7.txt`).
+
+Факт на текущем HEAD:
+- historical snapshot (`429 / 30`) сейчас **не воспроизводится** через canonical harness path;
+- через canonical harness path воспроизводится отдельный baseline-срез (full public `289/1711` с текущим v7; subset `32/34`).
+
+Статус 3-word single-token step (`внутри`, `колоритные`, `генерал`):
+- benefit proven на current canonical harness path (`282 -> 289` на full public, subset без изменения);
+- project-level acceptance против historical hold-state snapshot остаётся **unresolved** до полного reconciliation benchmark path.
+
+Operational note (freeze):
+- **не расширять coverage backlog дальше**, пока benchmark-path reconciliation (historical snapshot vs current canonical harness path) не зафиксирован как завершённый.
 
 ### 4.5.3) Offline context-rerank replay (experiment only, non-production)
 
