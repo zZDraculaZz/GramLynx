@@ -1,0 +1,323 @@
+{
+  "dataset": "tests/cases/product_regression_user_texts.yml",
+  "canonical_baseline": {
+    "total_cases": 32,
+    "exact_match_pass_count": 11,
+    "exact_match_pass_rate": 0.34375,
+    "wrong_change": 1,
+    "smart_regresses_expected_match": 11,
+    "rollback_related": 0
+  },
+  "canonical_current_apply": {
+    "total_cases": 32,
+    "exact_match_pass_count": 20,
+    "exact_match_pass_rate": 0.625,
+    "wrong_change": 6,
+    "smart_regresses_expected_match": 0,
+    "rollback_related": 0
+  },
+  "kenlm_current_v1": {
+    "total_cases": 32,
+    "exact_match_pass_count": 9,
+    "exact_match_pass_rate": 0.28125,
+    "wrong_change": 0,
+    "smart_regresses_expected_match": 12,
+    "rollback_related": 0
+  },
+  "kenlm_current_v2": {
+    "total_cases": 32,
+    "exact_match_pass_count": 9,
+    "exact_match_pass_rate": 0.28125,
+    "wrong_change": 0,
+    "smart_regresses_expected_match": 12,
+    "rollback_related": 0
+  },
+  "research_v2_beats_current_apply": 1,
+  "research_v2_worse_than_current_apply": 12,
+  "decision_bucket_counts": {
+    "baseline_correct_kenlm_keep_current_apply_wrong": 2,
+    "baseline_wrong_kenlm_keep_expected_needs_change": 20,
+    "baseline_wrong_kenlm_corrects_successfully": 1,
+    "current_apply_correct_kenlm_keeps_original": 20,
+    "kenlm_applies_but_still_misses": 0
+  },
+  "keep_original_profile": {
+    "keep_original_count": 32,
+    "keep_reason_counts": {
+      "low_margin": 26,
+      "low_abs_score": 6
+    },
+    "token_reason_counts": {
+      "no_candidates": 23
+    },
+    "pattern_counts": {
+      "candidate_exists_but_fail_closed_or_original_wins": 13,
+      "good_candidate_present_but_loses": 19
+    },
+    "beam_changed_decision_count": 0,
+    "v2_base_component_sum": -1.45,
+    "v2_kenlm_component_sum": -636.8082895278931,
+    "candidate_bottleneck_examples": []
+  },
+  "threshold_sweep": [
+    {
+      "min_abs_score": -35.0,
+      "min_margin": 0.5,
+      "total_cases": 32,
+      "exact_match_pass_count": 9,
+      "exact_match_pass_rate": 0.28125,
+      "wrong_change": 0,
+      "smart_regresses_expected_match": 12,
+      "rollback_related": 0,
+      "keep_original_count": 32,
+      "no_candidate_count": 0,
+      "low_margin_count": 1,
+      "low_abs_score_count": 1
+    },
+    {
+      "min_abs_score": -35.0,
+      "min_margin": 1.5,
+      "total_cases": 32,
+      "exact_match_pass_count": 9,
+      "exact_match_pass_rate": 0.28125,
+      "wrong_change": 0,
+      "smart_regresses_expected_match": 12,
+      "rollback_related": 0,
+      "keep_original_count": 32,
+      "no_candidate_count": 0,
+      "low_margin_count": 31,
+      "low_abs_score_count": 1
+    },
+    {
+      "min_abs_score": -35.0,
+      "min_margin": 3.0,
+      "total_cases": 32,
+      "exact_match_pass_count": 9,
+      "exact_match_pass_rate": 0.28125,
+      "wrong_change": 0,
+      "smart_regresses_expected_match": 12,
+      "rollback_related": 0,
+      "keep_original_count": 32,
+      "no_candidate_count": 0,
+      "low_margin_count": 31,
+      "low_abs_score_count": 1
+    },
+    {
+      "min_abs_score": -25.0,
+      "min_margin": 0.5,
+      "total_cases": 32,
+      "exact_match_pass_count": 9,
+      "exact_match_pass_rate": 0.28125,
+      "wrong_change": 0,
+      "smart_regresses_expected_match": 12,
+      "rollback_related": 0,
+      "keep_original_count": 32,
+      "no_candidate_count": 0,
+      "low_margin_count": 1,
+      "low_abs_score_count": 6
+    },
+    {
+      "min_abs_score": -25.0,
+      "min_margin": 1.5,
+      "total_cases": 32,
+      "exact_match_pass_count": 9,
+      "exact_match_pass_rate": 0.28125,
+      "wrong_change": 0,
+      "smart_regresses_expected_match": 12,
+      "rollback_related": 0,
+      "keep_original_count": 32,
+      "no_candidate_count": 0,
+      "low_margin_count": 26,
+      "low_abs_score_count": 6
+    },
+    {
+      "min_abs_score": -25.0,
+      "min_margin": 3.0,
+      "total_cases": 32,
+      "exact_match_pass_count": 9,
+      "exact_match_pass_rate": 0.28125,
+      "wrong_change": 0,
+      "smart_regresses_expected_match": 12,
+      "rollback_related": 0,
+      "keep_original_count": 32,
+      "no_candidate_count": 0,
+      "low_margin_count": 26,
+      "low_abs_score_count": 6
+    },
+    {
+      "min_abs_score": -15.0,
+      "min_margin": 0.5,
+      "total_cases": 32,
+      "exact_match_pass_count": 9,
+      "exact_match_pass_rate": 0.28125,
+      "wrong_change": 0,
+      "smart_regresses_expected_match": 12,
+      "rollback_related": 0,
+      "keep_original_count": 32,
+      "no_candidate_count": 0,
+      "low_margin_count": 0,
+      "low_abs_score_count": 26
+    },
+    {
+      "min_abs_score": -15.0,
+      "min_margin": 1.5,
+      "total_cases": 32,
+      "exact_match_pass_count": 9,
+      "exact_match_pass_rate": 0.28125,
+      "wrong_change": 0,
+      "smart_regresses_expected_match": 12,
+      "rollback_related": 0,
+      "keep_original_count": 32,
+      "no_candidate_count": 0,
+      "low_margin_count": 6,
+      "low_abs_score_count": 26
+    },
+    {
+      "min_abs_score": -15.0,
+      "min_margin": 3.0,
+      "total_cases": 32,
+      "exact_match_pass_count": 9,
+      "exact_match_pass_rate": 0.28125,
+      "wrong_change": 0,
+      "smart_regresses_expected_match": 12,
+      "rollback_related": 0,
+      "keep_original_count": 32,
+      "no_candidate_count": 0,
+      "low_margin_count": 6,
+      "low_abs_score_count": 26
+    }
+  ],
+  "top_cases": {
+    "too_conservative": [
+      {
+        "input_text": "севодня буду позже",
+        "expected_clean_text": "сегодня буду позже",
+        "current_apply_output": "сегодня буду позже",
+        "kenlm_output": "севодня буду позже"
+      },
+      {
+        "input_text": "имхо норм",
+        "expected_clean_text": "имхо норм",
+        "current_apply_output": "имхо норм",
+        "kenlm_output": "имхо норм"
+      },
+      {
+        "input_text": "сорян за опоздание",
+        "expected_clean_text": "сорян за опоздание",
+        "current_apply_output": "сорян за опоздание",
+        "kenlm_output": "сорян за опоздание"
+      },
+      {
+        "input_text": "порусски инструкция написана непонятно",
+        "expected_clean_text": "по-русски инструкция написана непонятно",
+        "current_apply_output": "по-русски инструкция написана непонятно",
+        "kenlm_output": "порусски инструкция написана непонятно"
+      },
+      {
+        "input_text": "попрежнему не работает",
+        "expected_clean_text": "по-прежнему не работает",
+        "current_apply_output": "по-прежнему не работает",
+        "kenlm_output": "попрежнему не работает"
+      },
+      {
+        "input_text": "изза этого снял звезду",
+        "expected_clean_text": "из-за этого снял звезду",
+        "current_apply_output": "из-за этого снял звезду",
+        "kenlm_output": "изза этого снял звезду"
+      },
+      {
+        "input_text": "превет всем",
+        "expected_clean_text": "привет всем",
+        "current_apply_output": "привет всем",
+        "kenlm_output": "превет всем"
+      },
+      {
+        "input_text": "спосибо за помощь",
+        "expected_clean_text": "спасибо за помощь",
+        "current_apply_output": "спасибо за помощь",
+        "kenlm_output": "спосибо за помощь"
+      },
+      {
+        "input_text": "первый\n\n\nвторой",
+        "expected_clean_text": "первый\n\nвторой",
+        "current_apply_output": "первый\n\nвторой",
+        "kenlm_output": "первый\n\n\nвторой"
+      },
+      {
+        "input_text": "смотри https://example.com/севодня и отпишись",
+        "expected_clean_text": "смотри https://example.com/севодня и отпишись",
+        "current_apply_output": "смотри https://example.com/севодня и отпишись",
+        "kenlm_output": "смотри https://example.com/севодня и отпишись"
+      },
+      {
+        "input_text": "логин севодня@mail.example уже занят",
+        "expected_clean_text": "логин севодня@mail.example уже занят",
+        "current_apply_output": "логин севодня@mail.example уже занят",
+        "kenlm_output": "логин севодня@mail.example уже занят"
+      },
+      {
+        "input_text": "тикет 550e8400-e29b-41d4-a716-446655440000 создан севодня",
+        "expected_clean_text": "тикет 550e8400-e29b-41d4-a716-446655440000 создан сегодня",
+        "current_apply_output": "тикет 550e8400-e29b-41d4-a716-446655440000 создан сегодня",
+        "kenlm_output": "тикет 550e8400-e29b-41d4-a716-446655440000 создан севодня"
+      },
+      {
+        "input_text": "путь /tmp/севодня.txt не удаляй",
+        "expected_clean_text": "путь /tmp/севодня.txt не удаляй",
+        "current_apply_output": "путь /tmp/севодня.txt не удаляй",
+        "kenlm_output": "путь /tmp/севодня.txt не удаляй"
+      },
+      {
+        "input_text": "напиши @порусски позже",
+        "expected_clean_text": "напиши @порусски позже",
+        "current_apply_output": "напиши @порусски позже",
+        "kenlm_output": "напиши @порусски позже"
+      },
+      {
+        "input_text": "#севодня был стрим",
+        "expected_clean_text": "#севодня был стрим",
+        "current_apply_output": "#севодня был стрим",
+        "kenlm_output": "#севодня был стрим"
+      },
+      {
+        "input_text": "встреча 2026-03-14 в 18:30 севодня",
+        "expected_clean_text": "встреча 2026-03-14 в 18:30 сегодня",
+        "current_apply_output": "встреча 2026-03-14 в 18:30 сегодня",
+        "kenlm_output": "встреча 2026-03-14 в 18:30 севодня"
+      },
+      {
+        "input_text": "бренд симпотичныйX",
+        "expected_clean_text": "бренд симпотичныйX",
+        "current_apply_output": "бренд симпотичныйX",
+        "kenlm_output": "бренд симпотичныйX"
+      },
+      {
+        "input_text": "ктото позвонил",
+        "expected_clean_text": "кто-то позвонил",
+        "current_apply_output": "кто-то позвонил",
+        "kenlm_output": "ктото позвонил"
+      },
+      {
+        "input_text": "почемуто не грузит",
+        "expected_clean_text": "почему-то не грузит",
+        "current_apply_output": "почему-то не грузит",
+        "kenlm_output": "почемуто не грузит"
+      },
+      {
+        "input_text": "поанглийски и понемецки читаю",
+        "expected_clean_text": "по-английски и по-немецки читаю",
+        "current_apply_output": "по-английски и по-немецки читаю",
+        "kenlm_output": "поанглийски и понемецки читаю"
+      }
+    ],
+    "avoids_current_apply_harm": [
+      {
+        "input_text": "жызнь прекрасна ,правда ?",
+        "expected_clean_text": "жызнь прекрасна ,правда ?",
+        "current_apply_output": "жизнь прекрасна ,правда ?",
+        "kenlm_output": "жызнь прекрасна ,правда ?"
+      }
+    ],
+    "candidate_source_bottleneck": []
+  }
+}
