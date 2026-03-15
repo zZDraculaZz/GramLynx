@@ -286,6 +286,34 @@ python -m tests.offline_context_rerank_replay   --full-public tests/cases/ruspel
 - только через новый analysis-backed evidence cycle (повторяемый offline сигнал на независимых user-like наборах с ясным safety/quality trade-off),
   до любых обсуждений guarded runtime prototype.
 
+### 4.5.5) Offline KenLM-style rerank scaffold (research-only)
+
+Для следующего research-цикла добавлен отдельный offline scaffold под KenLM-style sentence scoring,
+без runtime integration и без изменения `/clean` path.
+
+Запуск:
+
+```bash
+python -m tests.offline_kenlm_rerank_experiment \
+  --full-public tests/cases/ruspellgold_full_public.jsonl \
+  --subset tests/cases/ruspellgold_benchmark.jsonl \
+  --product-holdout tests/cases/product_regression_user_texts.yml \
+  --output-json offline_kenlm_rerank_experiment_report.json \
+  --output-md offline_kenlm_rerank_experiment_report.md
+```
+
+Что фиксирует scaffold:
+- `candidate_source` (текущий top-k из `symspell`);
+- `top_k` extraction (`max_candidates_ru=3`);
+- `sentence_scorer` hook (placeholder, deterministic);
+- fail-closed fallback (`no_apply`, если нет уверенного выигрыша);
+- comparison targets: `baseline` / `current_apply` / `offline_rerank`.
+
+Важно:
+- это **только offline research track**;
+- это **не production path**;
+- scaffold **не влияет** на API/runtime/config defaults.
+
 ## 4.6) Local readiness summary (single operator view)
 
 Собрать компактный readiness summary из локально доступных сигналов:
