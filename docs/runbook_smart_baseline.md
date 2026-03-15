@@ -253,6 +253,39 @@ Subset path (`tests/cases/ruspellgold_benchmark.jsonl`, 34 кейса):
 - пока не появится новый сильный и безопасный локальный сигнал, runtime apply path не трогаем;
 - любые следующие предложения сначала подтверждаются через тот же fail-closed eval loop (`tests.report_ruspellgold_tuning`, full public + subset).
 
+
+### 4.5.3) Offline context-rerank replay (experiment only, non-production)
+
+Минимальный offline replay-эксперимент для проверки гипотезы context-aware reranking (без изменения runtime/API/config defaults):
+
+```bash
+python -m tests.offline_context_rerank_replay   --full-public tests/cases/ruspellgold_full_public.jsonl   --subset tests/cases/ruspellgold_benchmark.jsonl   --output-json offline_context_rerank_replay_report.json   --output-md offline_context_rerank_replay_report.md
+```
+
+Важно:
+- это **только offline analysis utility**;
+- не является production path и не меняет `/clean` behavior;
+- вердикт (`promising` / `not_promising` / `inconclusive`) используется только как сигнал для следующего цикла исследований.
+
+### 4.5.4) Offline reranker hold-state decision (current)
+
+Результат exploration по context-aware reranking зафиксирован как **hold-state**:
+- на full public path был ограниченный положительный сигнал относительно current apply;
+- на независимом user-like holdout (`tests/cases/product_regression_user_texts.yml`) переносимость оказалась недостаточной для runtime-кандидата;
+- decision-level audit показал, что reranker чаще блокирует полезные apply-fixes, чем предотвращает harmful apply-cases в прикладном наборе.
+
+Текущее решение:
+- **не интегрировать reranker в runtime path сейчас**;
+- считать reranker **offline-only exploration**, без изменения API/runtime/config defaults.
+
+Почему остановлены оба трека на данном этапе:
+- guard-based apply micro-tuning остановлен из-за plateau и ухудшения совместимости с full public baseline;
+- rerank-трек остановлен как practically weak на user-like holdout (ограниченный перенос).
+
+Условие возможного возврата к теме:
+- только через новый analysis-backed evidence cycle (повторяемый offline сигнал на независимых user-like наборах с ясным safety/quality trade-off),
+  до любых обсуждений guarded runtime prototype.
+
 ## 4.6) Local readiness summary (single operator view)
 
 Собрать компактный readiness summary из локально доступных сигналов:
