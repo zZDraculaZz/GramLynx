@@ -48,6 +48,11 @@ Replay computes comparable outputs for:
    - `python -m research.context_rerank_v1.replay --config research/context_rerank_v1/examples/full_public_pretrained.yaml --output-json research/context_rerank_v1/full_public_pretrained_report.json`
 
 
+## CI note for research tests
+- KenLM backend is optional in CI environments.
+- Tests that require a real `kenlm` backend are skipped when the backend is unavailable.
+- When `kenlm` is installed, those tests execute normally.
+
 ## KenLM v2 reranking
 - Candidate score = weighted combination of base candidate score and KenLM sequence score.
 - Search = beam search over sentence-level candidate sequences (`beam_width`).

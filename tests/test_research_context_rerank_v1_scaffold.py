@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
 
@@ -17,6 +18,16 @@ from research.context_rerank_v1.replay import (
 from research.context_rerank_v1.report import render_markdown
 from research.context_rerank_v1.scorers.kenlm import KenLMScorer
 from research.context_rerank_v1.candidate_source import LargeLexiconCandidateSource
+
+
+def _kenlm_backend_available() -> bool:
+    return importlib.util.find_spec("kenlm") is not None
+
+
+KENLM_REQUIRED = pytest.mark.skipif(
+    not _kenlm_backend_available(),
+    reason="kenlm backend is not available in this environment",
+)
 
 
 def test_scaffold_modules_import() -> None:
@@ -47,6 +58,7 @@ def test_combined_score_deterministic() -> None:
     assert s1 == pytest.approx(s2)
 
 
+@KENLM_REQUIRED
 def test_kenlm_scorer_initializes_and_is_stable(tmp_path: Path) -> None:
     arpa = tmp_path / "tiny.arpa"
     KenLMScorer.train_bigram_arpa(("сегодня будет встреча", "это тест"), arpa)
@@ -59,6 +71,7 @@ def test_kenlm_scorer_initializes_and_is_stable(tmp_path: Path) -> None:
     assert s1 == pytest.approx(s2)
 
 
+@KENLM_REQUIRED
 def test_scorer_initializes_from_external_model_path(tmp_path: Path) -> None:
     arpa = tmp_path / "external.arpa"
     KenLMScorer.train_bigram_arpa(("привет мир", "сегодня встреча"), arpa)
@@ -71,6 +84,7 @@ def test_make_scorer_requires_independent_source() -> None:
         make_scorer({"scorer_type": "kenlm"})
 
 
+@KENLM_REQUIRED
 def test_beam_search_path_runs_and_preserves_fail_closed(tmp_path: Path) -> None:
     dictionary = tmp_path / "dict.txt"
     dictionary.write_text("сегодня\nбудет\nвстреча\n", encoding="utf-8")
@@ -92,6 +106,7 @@ def test_beam_search_path_runs_and_preserves_fail_closed(tmp_path: Path) -> None
     assert result["output_text"] == "севодня будет встреча"
 
 
+@KENLM_REQUIRED
 def test_replay_runs_with_pretrained_scorer_path(tmp_path: Path) -> None:
     dictionary = tmp_path / "dict.txt"
     dictionary.write_text("сегодня\nбудет\nвстреча\nтекст\nбез\nизменений\n", encoding="utf-8")
@@ -161,6 +176,7 @@ def test_replay_runs_with_pretrained_scorer_path(tmp_path: Path) -> None:
     assert "## research_replay_v2" in markdown
 
 
+@KENLM_REQUIRED
 def test_replay_with_independent_corpus_path_runs(tmp_path: Path) -> None:
     dictionary = tmp_path / "dict.txt"
     dictionary.write_text("сегодня\nбудет\nвстреча\n", encoding="utf-8")
