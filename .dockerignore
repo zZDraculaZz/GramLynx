@@ -1,0 +1,9 @@
+# Keep Docker build context minimal and deterministic for CI.
+*
+
+# Files required by Dockerfile
+!pyproject.toml
+!README.md
+!config.smart_baseline_staging.yml
+!app/
+!app/**
