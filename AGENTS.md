@@ -69,6 +69,23 @@ Standard checks:
 - `ruff check .`
 - `pytest -q`
 
+### Acceptance benchmark policy (current)
+- **Primary source of truth:** full public RuSpellGold (`tests/cases/ruspellgold_full_public.jsonl`, 1711 cases).
+- **Primary measurement path:** current canonical reproducible harness path (`python -m tests.report_ruspellgold_tuning ...`, `symspell_apply`).
+- **Secondary smoke only:** subset benchmark (`tests/cases/ruspellgold_benchmark.jsonl`, 34 cases) and product-regression holdout (`tests/cases/product_regression_user_texts.yml`).
+- Subset/holdout signals should be used to detect **coarse breakage**, but they are not the primary acceptance gate when full public improves without safety regression.
+
+### Acceptance logic for deterministic coverage steps
+- full public `exact_match_pass_count` improves or at least does not degrade;
+- full public `wrong_change` does not increase;
+- full public `smart_regresses_expected_match` does not increase;
+- `rollback_related` does not worsen materially;
+- subset/product-regression are interpreted as secondary regression smoke checks.
+
+Note:
+- historical snapshots are not source-of-truth for new acceptance decisions;
+- source-of-truth is the current canonical reproducible harness path.
+
 If a task touches optional metrics functionality, use the environment/dependencies that include metrics extras.
 If a full test run fails because of optional dependency setup, clearly distinguish:
 - whether the new change is correct

@@ -10,6 +10,29 @@ from pathlib import Path
 from typing import Any
 
 
+SAFE_SINGLE_TOKEN_P3_MAP: dict[str, str] = {
+    "делему": "дилемму",
+    "охото": "охота",
+    "отделного": "отдельного",
+    "замечательнх": "замечательных",
+    "конкурентнсть": "конкурентность",
+    "граммотно": "грамотно",
+    "репресии": "репрессии",
+    "существовует": "существует",
+    "съэкономить": "сэкономить",
+    "приемлимо": "приемлемо",
+    "интерентом": "интернетом",
+    "наоброт": "наоборот",
+    "сумашедший": "сумасшедший",
+    "необходмо": "необходимо",
+    "благодвря": "благодаря",
+    "соответсвует": "соответствует",
+    "дейстительно": "действительно",
+    "колличеству": "количеству",
+    "компьтер": "компьютер",
+    "паступят": "поступят",
+}
+
 REPLACEMENTS = {
     "жы": "жи",
     "Жы": "Жи",
@@ -163,6 +186,9 @@ def find_rulepack_replacements(
 
         replacement = typo_map.get(token)
         from_generator = False
+
+        if not replacement and enable_candidate_generation_ru:
+            replacement = SAFE_SINGLE_TOKEN_P3_MAP.get(token)
 
         if not replacement and enable_candidate_generation_ru:
             candidate = None
