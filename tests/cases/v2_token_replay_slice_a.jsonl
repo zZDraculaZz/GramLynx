@@ -1,0 +1,10 @@
+{"input_text":"превет","expected_clean_text":"привет","left_context":["всем"],"right_context":[]}
+{"input_text":"делемму","expected_clean_text":"дилемму","left_context":["эту"],"right_context":["решили"]}
+{"input_text":"севодня","expected_clean_text":"сегодня","left_context":[],"right_context":["дождь"]}
+{"input_text":"завтро","expected_clean_text":"завтра","left_context":["до"],"right_context":["встречи"]}
+{"input_text":"пжалуста","expected_clean_text":"пожалуйста","left_context":[],"right_context":[]}
+{"input_text":"атк","expected_clean_text":"атк","left_context":["мой"],"right_context":["план"]}
+{"input_text":"тест","expected_clean_text":"тест","left_context":[],"right_context":[]}
+{"input_text":"домойй","expected_clean_text":"домой","left_context":["иду"],"right_context":[]}
+{"input_text":"встрча","expected_clean_text":"встреча","left_context":["наша"],"right_context":[]}
+{"input_text":"абракадабра","expected_clean_text":"абракадабра","left_context":[],"right_context":[]}
