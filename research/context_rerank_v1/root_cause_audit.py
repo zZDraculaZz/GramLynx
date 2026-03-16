@@ -68,6 +68,7 @@ def _analyze_dataset(corpus_path: Path, cfg: dict[str, Any]) -> dict[str, Any]:
         top_k=int(cfg.get("top_k", 5)),
         max_edit_distance=int(cfg.get("max_edit_distance", 3)),
         extra_dictionary_paths=tuple(str(p) for p in cfg.get("extra_dictionary_sources", [])),
+        enable_retrieval_normalization=bool(cfg.get("enable_retrieval_normalization", True)),
     )
 
     slices = Counter()

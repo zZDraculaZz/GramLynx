@@ -1,0 +1,24 @@
+{
+  "before": {
+    "total_cases": 32,
+    "exact_match_pass_count": 9,
+    "exact_match_pass_rate": 0.28125,
+    "wrong_change": 0,
+    "smart_regresses_expected_match": 4,
+    "rollback_related": 0,
+    "keep_original_count": 32,
+    "gold_in_topk_selected_count": 0,
+    "gold_present_in_topk_but_not_selected": 36
+  },
+  "after": {
+    "total_cases": 32,
+    "exact_match_pass_count": 9,
+    "exact_match_pass_rate": 0.28125,
+    "wrong_change": 0,
+    "smart_regresses_expected_match": 4,
+    "rollback_related": 0,
+    "keep_original_count": 32,
+    "gold_in_topk_selected_count": 0,
+    "gold_present_in_topk_but_not_selected": 36
+  }
+}

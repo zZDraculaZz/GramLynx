@@ -107,6 +107,7 @@ def _run_kenlm_v2_with_audit(
         top_k=int(cfg["top_k"]),
         max_edit_distance=int(cfg.get("max_edit_distance", 3)),
         extra_dictionary_paths=extra_dictionary_sources,
+        enable_retrieval_normalization=bool(cfg.get("enable_retrieval_normalization", True)),
     )
     alpha = float(cfg.get("combined_alpha", 1.0))
     beta = float(cfg.get("combined_beta", 1.0))

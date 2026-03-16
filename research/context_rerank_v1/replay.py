@@ -172,10 +172,12 @@ def run_replay(config: dict[str, Any], cases: tuple[ReplayCase, ...]) -> dict[st
         top_k=int(config["top_k"]),
         max_edit_distance=int(config.get("max_edit_distance", 3)),
         extra_dictionary_paths=extra_dictionary_sources,
+        enable_retrieval_normalization=bool(config.get("enable_retrieval_normalization", True)),
     )
     scorer = make_scorer(config)
 
-    current_apply = _run_current_apply(cases)
+    cache_path = Path(str(config["current_apply_cache_path"])) if config.get("current_apply_cache_path") else None
+    current_apply = _run_current_apply(cases, cache_path=cache_path)
     alpha = float(config.get("combined_alpha", 1.0))
     beta = float(config.get("combined_beta", 1.0))
     beam_width = int(config.get("beam_width", 4))
@@ -222,7 +224,20 @@ def run_replay(config: dict[str, Any], cases: tuple[ReplayCase, ...]) -> dict[st
     return build_report(outputs)
 
 
-def _run_current_apply(cases: tuple[ReplayCase, ...]) -> dict[str, CurrentApplyResult]:
+def _run_current_apply(cases: tuple[ReplayCase, ...], cache_path: Path | None = None) -> dict[str, CurrentApplyResult]:
+    if cache_path is not None and cache_path.exists():
+        payload = json.loads(cache_path.read_text(encoding="utf-8"))
+        if isinstance(payload, dict):
+            cached: dict[str, CurrentApplyResult] = {}
+            for key, row in payload.items():
+                if isinstance(row, dict) and isinstance(row.get("output"), str):
+                    cached[str(key)] = CurrentApplyResult(
+                        output=str(row["output"]),
+                        rollback_related=bool(row.get("rollback_related", False)),
+                    )
+            if len(cached) >= len(cases):
+                return cached
+
     prev_cfg = os.environ.get("GRAMLYNX_CONFIG_YAML")
     reset_app_config_cache()
     results: dict[str, CurrentApplyResult] = {}
@@ -242,6 +257,11 @@ def _run_current_apply(cases: tuple[ReplayCase, ...]) -> dict[str, CurrentApplyR
         else:
             os.environ["GRAMLYNX_CONFIG_YAML"] = prev_cfg
         reset_app_config_cache()
+    if cache_path is not None:
+        cache_path.write_text(
+            json.dumps({k: {"output": v.output, "rollback_related": v.rollback_related} for k, v in results.items()}, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
     return results
 
 

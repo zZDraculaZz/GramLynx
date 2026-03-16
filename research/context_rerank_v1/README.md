@@ -96,3 +96,17 @@ Replay computes comparable outputs for:
   - punctuation/chat-noise classes and retrieval/selection breakdown;
   - normalization probes (`lowercase`, `ё→е`, punctuation stripping, basic chat-noise cleanup);
   - representative examples and ranked bottlenecks.
+
+
+## Retrieval normalization comparison (research-only)
+- Before/after comparison helper for shortlist-quality impact:
+  - `PYTHONPATH=/workspace/GramLynx python research/context_rerank_v1/compute_retrieval_coverage.py`
+- Runs root-cause slices + replay + decision-audit in two modes:
+  - `enable_retrieval_normalization: false` (before)
+  - `enable_retrieval_normalization: true` (after)
+
+- Optional performance flag for long full-public runs: set `current_apply_cache_path` in replay config to cache canonical `current_apply` outputs between runs (research-only).
+
+## Shortlist-quality focus (research-only)
+- Candidate retrieval now uses narrow noisy-token variants (wrapper stripping + `#/@` bare + limited `по-/из-` hyphen restoration) and prioritizes `ё` surface variants in shortlist ranking.
+- This is research-only retrieval instrumentation and does not change production runtime path.

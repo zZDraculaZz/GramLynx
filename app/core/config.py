@@ -88,6 +88,9 @@ class RulepackConfig(BaseModel):
     max_candidates_ru: int = Field(default=3, ge=1, le=10)
     max_edit_distance_ru: int = Field(default=1, ge=1, le=2)
     dictionary_source_ru: str = ""
+    v2_selector_scaffold_enabled: bool = False
+    v2_selector_min_confidence: float = 0.0
+    v2_selector_min_margin: float = 0.0
     safe_normalize: RulepackSafeNormalizeConfig = Field(default_factory=RulepackSafeNormalizeConfig)
     punctuation: RulepackPunctuationConfig = Field(default_factory=RulepackPunctuationConfig)
     punctuation_spacing_ru: RulepackPunctuationSpacingRuConfig = Field(

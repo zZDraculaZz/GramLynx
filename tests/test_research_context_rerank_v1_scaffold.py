@@ -359,3 +359,63 @@ def test_root_cause_audit_smoke(tmp_path: Path) -> None:
     assert out.exists()
     assert "full_public" in payload
     assert "candidate_source_failure_slices" in payload["full_public"]
+
+
+def test_candidate_source_retrieval_normalization_adds_yo_variant(tmp_path: Path) -> None:
+    dictionary = tmp_path / "dict.txt"
+    dictionary.write_text("ещё\n", encoding="utf-8")
+
+    legacy = LargeLexiconCandidateSource(dictionary, top_k=5, max_edit_distance=2, enable_retrieval_normalization=False)
+    improved = LargeLexiconCandidateSource(dictionary, top_k=5, max_edit_distance=2, enable_retrieval_normalization=True)
+
+    legacy_terms = [c.term for c in legacy.top_k("еще")]
+    improved_terms = [c.term for c in improved.top_k("еще")]
+
+    assert "ещё" not in legacy_terms
+    assert "ещё" in improved_terms
+
+
+def test_candidate_source_retrieval_normalization_hyphen_variant(tmp_path: Path) -> None:
+    dictionary = tmp_path / "dict.txt"
+    dictionary.write_text("из-за\n", encoding="utf-8")
+
+    legacy = LargeLexiconCandidateSource(dictionary, top_k=5, max_edit_distance=2, enable_retrieval_normalization=False)
+    improved = LargeLexiconCandidateSource(dictionary, top_k=5, max_edit_distance=2, enable_retrieval_normalization=True)
+
+    legacy_terms = [c.term for c in legacy.top_k("(изза)")]
+    improved_terms = [c.term for c in improved.top_k("(изза)")]
+
+    assert "из-за" not in legacy_terms
+    assert "из-за" in improved_terms
+
+
+def test_run_replay_current_apply_cache_roundtrip(tmp_path: Path) -> None:
+    dictionary = tmp_path / "dict.txt"
+    dictionary.write_text("сегодня\nбудет\nвстреча\n", encoding="utf-8")
+    corpus = tmp_path / "cases.jsonl"
+    corpus.write_text(
+        json.dumps({"input_text": "севодня будет встреча", "expected_clean_text": "сегодня будет встреча"}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    lm_corpus = tmp_path / "lm.txt"
+    lm_corpus.write_text("сегодня будет встреча\n", encoding="utf-8")
+    cache = tmp_path / "current_apply_cache.json"
+
+    cfg = {
+        "top_k": 3,
+        "min_margin": 0.2,
+        "min_abs_score": -25.0,
+        "combined_alpha": 1.0,
+        "combined_beta": 1.0,
+        "beam_width": 2,
+        "dictionary_source": str(dictionary),
+        "corpus_path": str(corpus),
+        "scorer_type": "kenlm",
+        "kenlm_training_corpus_path": str(lm_corpus),
+        "current_apply_cache_path": str(cache),
+    }
+    cases = load_cases(corpus)
+    first = run_replay(cfg, cases)
+    second = run_replay(cfg, cases)
+    assert cache.exists()
+    assert first["research_replay_v2"]["total_cases"] == second["research_replay_v2"]["total_cases"]
