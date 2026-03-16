@@ -100,8 +100,10 @@ KenLM clarification:
 
 - KenLM is not the main identity of the project.
 - KenLM is not the sole strategy of GramLynx v2.
-- KenLM is only one possible contextual scorer / research reference line.
-- KenLM remains optional research-only infrastructure, not a required default dependency for normal project workflows.
+- KenLM is a supported contextual scorer in the standard offline/dev GramLynx v2 evaluation workflow.
+- KenLM is one scorer option within the selector/scorer layer, not the architecture itself.
+- KenLM-backed scorer usage does not imply default runtime `/clean` activation.
+- Runtime `/clean` activation remains explicitly evidence-gated.
 
 What GramLynx v2 is not:
 
