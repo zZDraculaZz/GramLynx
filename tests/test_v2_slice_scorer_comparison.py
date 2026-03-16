@@ -6,6 +6,7 @@ import pytest
 
 from app.core.v2 import CandidateOption, KenLMScorer, SelectorContext, SymSpellCandidateSource, is_kenlm_available
 from app.core.v2.offline_eval import RankBasedScorer, TextCleanCase, run_slice_scorer_comparison
+from research.context_rerank_v1.scorers.kenlm import KenLMScorer as ResearchKenLMScorer
 
 
 class _ReverseRankScorer:
@@ -69,28 +70,7 @@ KENLM_REQUIRED = pytest.mark.skipif(
 @KENLM_REQUIRED
 def test_run_slice_scorer_comparison_with_kenlm_optional_path(tmp_path: Path) -> None:
     arpa = tmp_path / "tiny.arpa"
-    arpa.write_text(
-        """\\data\\
-ngram 1=5
-ngram 2=4
-
-\\1-grams:
--0.1 я -0.1
--0.1 дома -0.1
--0.1 дом -0.1
--0.1 сегодня -0.1
--0.1 тест -0.1
-
-\\2-grams:
--0.01 я дома
--1.00 я дом
--0.05 сегодня тест
--0.40 сегодня дом
-
-\\end\\
-""",
-        encoding="utf-8",
-    )
+    ResearchKenLMScorer.train_bigram_arpa(("я дома", "я дома", "сегодня тест"), arpa)
 
     dictionary = tmp_path / "kenlm_dict.txt"
     dictionary.write_text("дома 200\nдом 190\nсегодня 180\nтест 170\n", encoding="utf-8")

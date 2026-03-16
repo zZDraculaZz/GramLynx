@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 from app.core.v2 import CandidateOption, KenLMScorer, SelectorContext, SymSpellCandidateSource, is_kenlm_available
@@ -11,6 +12,7 @@ from app.core.v2.offline_eval import RankBasedScorer, run_slice_scorer_compariso
 
 DEFAULT_SLICE_PATH = Path("tests/cases/v2_token_replay_slice_a.jsonl")
 DEFAULT_OUTPUT_JSON = Path("v2_slice_scorer_comparison.json")
+KENLM_MODEL_ENV = "GRAMLYNX_V2_KENLM_MODEL_PATH"
 
 
 class ReverseRankScorer:
@@ -34,10 +36,31 @@ def _metrics_view(summary: dict[str, int | float | dict[str, int]]) -> dict[str,
     return {k: summary[k] for k in keys if k in summary and isinstance(summary[k], (int, float))}
 
 
+def resolve_kenlm_model_path(cli_path: Path | None) -> Path | None:
+    if cli_path is not None:
+        return cli_path
+    env_path = os.environ.get(KENLM_MODEL_ENV, "").strip()
+    if not env_path:
+        return None
+    return Path(env_path)
+
+
+def get_kenlm_mode_blocker(kenlm_model_path: Path | None) -> str | None:
+    if not is_kenlm_available():
+        return "kenlm backend is not available"
+    if kenlm_model_path is None:
+        return f"kenlm model path is missing (use --kenlm-model or {KENLM_MODEL_ENV})"
+    if not kenlm_model_path.exists():
+        return f"kenlm model path does not exist: {kenlm_model_path}"
+    return None
+
+
 def format_compact_report(
     payload: dict[str, dict[str, int | float | dict[str, int]]],
     *,
+    requested_mode: str,
     challenger_name: str,
+    blocker: str | None,
 ) -> str:
     summary_a = payload["summary_a"]
     summary_b = payload["summary_b"]
@@ -47,6 +70,7 @@ def format_compact_report(
 
     lines = [
         "v2 slice scorer comparison summary:",
+        f"- requested_mode: {requested_mode}",
         "- baseline_scorer: RankBasedScorer",
         f"- challenger_scorer: {challenger_name}",
         f"- total_cases: {total_cases}",
@@ -65,13 +89,19 @@ def format_compact_report(
         ),
         f"- decision_reason_counts_delta: {delta.get('decision_reason_counts_delta', {})}",
     ]
+    if blocker:
+        lines.append(f"- kenlm_mode_blocker: {blocker}")
     return "\n".join(lines)
 
 
-def _resolve_challenger(*, mode: str, kenlm_model_path: Path | None) -> tuple[object, str]:
-    if mode == "kenlm" and is_kenlm_available() and kenlm_model_path is not None and kenlm_model_path.exists():
-        return KenLMScorer(kenlm_model_path), "KenLMScorer"
-    return ReverseRankScorer(), "ReverseRankScorer"
+def _resolve_challenger(*, mode: str, kenlm_model_path: Path | None) -> tuple[object, str, str | None]:
+    if mode == "kenlm":
+        blocker = get_kenlm_mode_blocker(kenlm_model_path)
+        if blocker is None:
+            assert kenlm_model_path is not None
+            return KenLMScorer(kenlm_model_path), "KenLMScorer", None
+        return ReverseRankScorer(), "ReverseRankScorer", blocker
+    return ReverseRankScorer(), "ReverseRankScorer", None
 
 
 def run_report(
@@ -81,9 +111,10 @@ def run_report(
     max_candidates: int,
     mode: str = "deterministic",
     kenlm_model_path: Path | None = None,
-) -> tuple[dict[str, dict[str, int | float | dict[str, int]]], str]:
+) -> tuple[dict[str, dict[str, int | float | dict[str, int]]], str, str | None]:
     source = SymSpellCandidateSource(dictionary_path=dictionary_path, max_candidates=max_candidates, include_original=True)
-    scorer_b, challenger_name = _resolve_challenger(mode=mode, kenlm_model_path=kenlm_model_path)
+    resolved_model_path = resolve_kenlm_model_path(kenlm_model_path)
+    scorer_b, challenger_name, blocker = _resolve_challenger(mode=mode, kenlm_model_path=resolved_model_path)
     payload = run_slice_scorer_comparison(
         cases_path,
         symspell_source=source,
@@ -91,7 +122,7 @@ def run_report(
         scorer_b=scorer_b,
         max_candidates=max_candidates,
     )
-    return payload, challenger_name
+    return payload, challenger_name, blocker
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -100,14 +131,14 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("--dictionary", required=True, help="Path to SymSpell dictionary text file")
     p.add_argument("--max-candidates", type=int, default=5)
     p.add_argument("--mode", choices=("deterministic", "kenlm"), default="deterministic")
-    p.add_argument("--kenlm-model", default=None, help="Path to KenLM ARPA/binary model (for --mode kenlm)")
+    p.add_argument("--kenlm-model", default=None, help=f"Path to KenLM ARPA/binary model (or use {KENLM_MODEL_ENV})")
     p.add_argument("--output-json", default=str(DEFAULT_OUTPUT_JSON), help="Path to output JSON payload")
     return p
 
 
 def main() -> None:
     args = _parser().parse_args()
-    payload, challenger_name = run_report(
+    payload, challenger_name, blocker = run_report(
         cases_path=Path(args.cases),
         dictionary_path=Path(args.dictionary),
         max_candidates=int(args.max_candidates),
@@ -116,7 +147,7 @@ def main() -> None:
     )
 
     Path(args.output_json).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(format_compact_report(payload, challenger_name=challenger_name))
+    print(format_compact_report(payload, requested_mode=str(args.mode), challenger_name=challenger_name, blocker=blocker))
 
 
 if __name__ == "__main__":

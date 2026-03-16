@@ -85,6 +85,24 @@ Offline baseline summary report (internal + external harnesses):
 python tests/report_candidate_baseline.py
 ```
 
+Tiny V2 scorer comparison on curated slice (offline/dev):
+
+```bash
+# deterministic fallback path (RankBasedScorer vs ReverseRankScorer)
+python tests/report_v2_slice_scorer_comparison.py   --dictionary app/resources/ru_dictionary_v7.txt   --mode deterministic
+
+# KenLM model prep from local corpus (one sentence per line):
+python tests/prepare_v2_kenlm_model.py   --corpus /path/to/lm_corpus.txt   --output /tmp/gramlynx_v2_local.arpa
+
+# KenLM path (RankBasedScorer vs KenLMScorer)
+# requires scorer extra + KenLM model path
+GRAMLYNX_V2_KENLM_MODEL_PATH=/tmp/gramlynx_v2_local.arpa python tests/report_v2_slice_scorer_comparison.py   --dictionary app/resources/ru_dictionary_v7.txt   --mode kenlm
+```
+
+`tests/prepare_v2_kenlm_model.py` reuses the existing research KenLM bigram-ARPA preparation helper and only standardizes corpus-path -> model-path preparation for offline/dev runs.
+
+If KenLM backend/model is unavailable, the runner stays fail-closed for KenLM mode and reports `kenlm_mode_blocker` while falling back to deterministic challenger.
+
 Offline pilot/manual review utility (local artifact):
 
 ```bash

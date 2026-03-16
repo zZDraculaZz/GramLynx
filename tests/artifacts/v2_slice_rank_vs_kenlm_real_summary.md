@@ -1,0 +1,9 @@
+v2 slice scorer comparison summary:
+- requested_mode: kenlm
+- baseline_scorer: RankBasedScorer
+- challenger_scorer: KenLMScorer
+- total_cases: 10
+- summary_a: {'total_cases': 10, 'expected_match_count': 3, 'expected_match_rate': 0.3, 'changed_count': 0, 'kept_original_count': 10, 'expected_match_when_changed_count': 0, 'expected_match_when_changed_rate': 0.0}
+- summary_b: {'total_cases': 10, 'expected_match_count': 3, 'expected_match_rate': 0.3, 'changed_count': 0, 'kept_original_count': 10, 'expected_match_when_changed_count': 0, 'expected_match_when_changed_rate': 0.0}
+- delta: {'expected_match_count_delta': 0, 'expected_match_rate_delta': 0.0, 'changed_count_delta': 0, 'kept_original_count_delta': 0, 'expected_match_when_changed_count_delta': 0, 'expected_match_when_changed_rate_delta': 0.0}
+- decision_reason_counts_delta: {'low_confidence': 10, 'original_wins': -10}

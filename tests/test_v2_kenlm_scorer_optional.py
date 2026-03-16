@@ -5,6 +5,7 @@ import importlib.util
 import pytest
 
 from app.core.v2 import CandidateOption, KenLMScorer, SelectorContext
+from research.context_rerank_v1.scorers.kenlm import KenLMScorer as ResearchKenLMScorer
 
 
 def _kenlm_backend_available() -> bool:
@@ -23,24 +24,7 @@ def test_kenlm_scorer_prefers_contextually_correct_candidate(tmp_path) -> None:
     assert kenlm is not None
 
     arpa = tmp_path / "tiny.arpa"
-    arpa.write_text(
-        """\\data\\
-ngram 1=3
-ngram 2=2
-
-\\1-grams:
--0.1 я -0.1
--0.1 дома -0.1
--0.1 дом -0.1
-
-\\2-grams:
--0.01 я дома
--1.00 я дом
-
-\\end\\
-""",
-        encoding="utf-8",
-    )
+    ResearchKenLMScorer.train_bigram_arpa(("я дома", "я дома", "я дом"), arpa)
 
     scorer = KenLMScorer(arpa)
     context = SelectorContext(left_context=("я",), original_token="дома", right_context=tuple())
