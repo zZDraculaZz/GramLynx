@@ -18,6 +18,7 @@ import yaml
 
 from app.core.config import reset_app_config_cache
 from app.core.orchestrator import Orchestrator
+from app.core.v2.offline_eval import load_text_clean_cases
 
 from .candidate_source import Candidate, LargeLexiconCandidateSource
 from .decision import fail_closed_pick
@@ -54,46 +55,8 @@ def load_config(path: Path) -> dict[str, Any]:
 
 
 def load_cases(path: Path) -> tuple[ReplayCase, ...]:
-    if path.suffix.lower() in {".yaml", ".yml"}:
-        return _load_cases_yaml(path)
-    return _load_cases_jsonl(path)
-
-
-def _load_cases_jsonl(path: Path) -> tuple[ReplayCase, ...]:
-    rows: list[ReplayCase] = []
-    for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
-        raw = line.strip()
-        if not raw:
-            continue
-        payload = json.loads(raw)
-        if not isinstance(payload, dict):
-            raise ValueError(f"invalid record at line {i}")
-        input_text = payload.get("input_text") or payload.get("input")
-        expected = payload.get("expected_clean_text")
-        if not isinstance(input_text, str) or not isinstance(expected, str):
-            raise ValueError(f"invalid schema at line {i}")
-        rows.append(ReplayCase(input_text=input_text, expected_clean_text=expected))
-    return tuple(rows)
-
-
-def _load_cases_yaml(path: Path) -> tuple[ReplayCase, ...]:
-    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError("invalid yaml corpus schema")
-    smart_rows = payload.get("smart")
-    if not isinstance(smart_rows, list):
-        raise ValueError("invalid yaml corpus schema: smart list missing")
-
-    rows: list[ReplayCase] = []
-    for i, row in enumerate(smart_rows, start=1):
-        if not isinstance(row, dict):
-            raise ValueError(f"invalid yaml row at index {i}")
-        input_text = row.get("input")
-        expected = row.get("expected_clean_text")
-        if not isinstance(input_text, str) or not isinstance(expected, str):
-            raise ValueError(f"invalid yaml row schema at index {i}")
-        rows.append(ReplayCase(input_text=input_text, expected_clean_text=expected))
-    return tuple(rows)
+    rows = load_text_clean_cases(path)
+    return tuple(ReplayCase(input_text=row.input_text, expected_clean_text=row.expected_clean_text) for row in rows)
 
 
 def _load_external_lm_corpus(path: Path) -> tuple[str, ...]:
