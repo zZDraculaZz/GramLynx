@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from typing import Sequence
 from pathlib import Path
 
 import yaml
 
-from .interfaces import CandidateOption, SelectorContext
+from .candidate_sources import SymSpellCandidateSource
+from .interfaces import CandidateOption, CandidateScorer, SelectorContext
 from .scaffold import make_v2_selector_scaffold
 
 
@@ -43,6 +45,17 @@ class _TableScorer:
         return float(self._scores.get(candidate.token, 0.0))
 
 
+
+
+class RankBasedScorer:
+    """Small deterministic scorer for offline shortlist replay.
+
+    Scores candidate by its shortlist rank value only.
+    """
+
+    def score_candidate(self, context: SelectorContext, candidate: CandidateOption) -> float:
+        _ = context
+        return float(candidate.rank)
 def load_text_clean_jsonl(
     path: Path,
     *,
@@ -193,6 +206,50 @@ def replay_cases(
     return tuple(outcomes)
 
 
+
+
+def run_symspell_selector_replay(
+    cases: Sequence[TextCleanCase],
+    *,
+    symspell_source: SymSpellCandidateSource,
+    scorer: CandidateScorer,
+    max_candidates: int = 5,
+    min_confidence: float = 0.0,
+    min_margin: float = 0.0,
+) -> dict[str, int | float]:
+    if max_candidates < 1:
+        raise ValueError("max_candidates must be >= 1")
+
+    scaffold = make_v2_selector_scaffold(min_confidence=min_confidence, min_margin=min_margin)
+    outcomes: list[ReplayCaseResult] = []
+
+    for index, case in enumerate(cases, start=1):
+        token = case.input_text.strip()
+        expected_token = case.expected_clean_text.strip()
+        if not token or not expected_token:
+            raise ValueError(f"invalid token replay case at index {index}")
+
+        candidates = list(symspell_source.candidates_for_token(token))
+        if not any(c.token == token for c in candidates):
+            candidates.append(CandidateOption(token=token, rank=0))
+        candidates = candidates[:max_candidates]
+
+        decision = scaffold.evaluate_token(
+            context=SelectorContext(left_context=tuple(), original_token=token, right_context=tuple()),
+            candidates=tuple(candidates),
+            scorer=scorer,
+        )
+        outcomes.append(
+            ReplayCaseResult(
+                case_id=f"symspell-{index}",
+                selected_token=decision.selected_token,
+                expected_token=expected_token,
+                reason=decision.reason,
+                changed=decision.changed,
+            )
+        )
+
+    return summarize_replay(tuple(outcomes))
 def summarize_replay(results: tuple[ReplayCaseResult, ...]) -> dict[str, int | float]:
     total = len(results)
     exact = sum(1 for row in results if row.selected_token == row.expected_token)

@@ -1,3 +1,4 @@
+from .candidate_sources import SymSpellCandidateSource
 from .decision import FailClosedDecisionLayer, SelectionDecision
 from .interfaces import CandidateOption, CandidateScorer, ScoredCandidate, SelectorContext
 from .scaffold import V2SelectorScaffold, make_v2_selector_scaffold
@@ -10,6 +11,7 @@ __all__ = [
     "FailClosedDecisionLayer",
     "ScoredCandidate",
     "SelectionDecision",
+    "SymSpellCandidateSource",
     "SelectorContext",
     "SelectorOutcome",
     "V2SelectorScaffold",
