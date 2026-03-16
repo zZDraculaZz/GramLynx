@@ -1,0 +1,13 @@
+top_k: 5
+max_edit_distance: 3
+min_margin: 1.5
+min_abs_score: -25.0
+combined_alpha: 1.0
+combined_beta: 1.0
+beam_width: 4
+dictionary_source: app/resources/ru_dictionary_v7.txt
+extra_dictionary_sources:
+  - research/context_rerank_v1/resources/ru_wordfreq_top50k.txt
+corpus_path: tests/cases/ruspellgold_full_public.jsonl
+scorer_type: kenlm
+kenlm_training_corpus_path: research/context_rerank_v1/resources/external_lm_corpus_ru.txt

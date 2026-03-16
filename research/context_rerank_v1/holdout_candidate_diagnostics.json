@@ -1,0 +1,31 @@
+{
+  "dataset": "tests/cases/product_regression_user_texts.yml",
+  "dictionary_source": "app/resources/ru_dictionary_v7.txt",
+  "top_k": 5,
+  "expected_change_cases": 19,
+  "coverage": {
+    "legacy": {
+      "cases_with_any_candidate": 0,
+      "cases_with_any_candidate_rate": 0.0,
+      "cases_with_gold_in_topk": 0,
+      "cases_with_gold_in_topk_rate": 0.0
+    },
+    "improved": {
+      "cases_with_any_candidate": 19,
+      "cases_with_any_candidate_rate": 1.0,
+      "cases_with_gold_in_topk": 19,
+      "cases_with_gold_in_topk_rate": 1.0
+    }
+  },
+  "candidate_source_mismatch": {
+    "main_has_candidate_research_improved_no_candidate": 0,
+    "research_improved_has_candidate_main_no_candidate": 20,
+    "main_best_in_research_improved_topk": 0
+  },
+  "root_causes": {
+    "token_not_safe_ru": 0,
+    "legacy_no_candidate_improved_has_candidate": 20,
+    "both_no_candidate": 0,
+    "gold_absent_in_both": 0
+  }
+}

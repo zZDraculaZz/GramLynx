@@ -1,0 +1,165 @@
+{
+  "baseline": {
+    "total_cases": 32,
+    "exact_match_pass_count": 9,
+    "exact_match_pass_rate": 0.28125,
+    "wrong_change": 0,
+    "smart_regresses_expected_match": 4,
+    "rollback_related": 0
+  },
+  "current_apply": {
+    "total_cases": 32,
+    "exact_match_pass_count": 13,
+    "exact_match_pass_rate": 0.40625,
+    "wrong_change": 5,
+    "smart_regresses_expected_match": 0,
+    "rollback_related": 1
+  },
+  "research_replay_v1": {
+    "total_cases": 32,
+    "exact_match_pass_count": 9,
+    "exact_match_pass_rate": 0.28125,
+    "wrong_change": 0,
+    "smart_regresses_expected_match": 4,
+    "rollback_related": 0
+  },
+  "research_replay_v2": {
+    "total_cases": 32,
+    "exact_match_pass_count": 9,
+    "exact_match_pass_rate": 0.28125,
+    "wrong_change": 0,
+    "smart_regresses_expected_match": 4,
+    "rollback_related": 0
+  },
+  "buckets": {
+    "research_v1_beats_current_apply": [],
+    "research_v1_worse_than_current_apply": [
+      {
+        "input_text": "привет ,как дела ?",
+        "expected_clean_text": "привет, как дела?",
+        "baseline_output": "привет ,как дела ?",
+        "current_apply_output": "привет, как дела?",
+        "research_replay_v1_output": "привет ,как дела ?",
+        "research_replay_v2_output": "привет ,как дела ?",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -17.605514526367188,
+        "beam_changed_decision": false
+      },
+      {
+        "input_text": "это   тест   без   паники",
+        "expected_clean_text": "это тест без паники",
+        "baseline_output": "это   тест   без   паники",
+        "current_apply_output": "это тест без паники",
+        "research_replay_v1_output": "это   тест   без   паники",
+        "research_replay_v2_output": "это   тест   без   паники",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -21.132442474365234,
+        "beam_changed_decision": false
+      },
+      {
+        "input_text": "   севодня   ",
+        "expected_clean_text": "севодня",
+        "baseline_output": "   севодня   ",
+        "current_apply_output": "севодня",
+        "research_replay_v1_output": "   севодня   ",
+        "research_replay_v2_output": "   севодня   ",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -10.55165958404541,
+        "beam_changed_decision": false
+      },
+      {
+        "input_text": "первый\n\n\nвторой",
+        "expected_clean_text": "первый\n\nвторой",
+        "baseline_output": "первый\n\n\nвторой",
+        "current_apply_output": "первый\n\nвторой",
+        "research_replay_v1_output": "первый\n\n\nвторой",
+        "research_replay_v2_output": "первый\n\n\nвторой",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -14.078587532043457,
+        "beam_changed_decision": false
+      }
+    ],
+    "research_v2_beats_current_apply": [],
+    "research_v2_worse_than_current_apply": [
+      {
+        "input_text": "привет ,как дела ?",
+        "expected_clean_text": "привет, как дела?",
+        "baseline_output": "привет ,как дела ?",
+        "current_apply_output": "привет, как дела?",
+        "research_replay_v1_output": "привет ,как дела ?",
+        "research_replay_v2_output": "привет ,как дела ?",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -17.605514526367188,
+        "beam_changed_decision": false
+      },
+      {
+        "input_text": "это   тест   без   паники",
+        "expected_clean_text": "это тест без паники",
+        "baseline_output": "это   тест   без   паники",
+        "current_apply_output": "это тест без паники",
+        "research_replay_v1_output": "это   тест   без   паники",
+        "research_replay_v2_output": "это   тест   без   паники",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -21.132442474365234,
+        "beam_changed_decision": false
+      },
+      {
+        "input_text": "   севодня   ",
+        "expected_clean_text": "севодня",
+        "baseline_output": "   севодня   ",
+        "current_apply_output": "севодня",
+        "research_replay_v1_output": "   севодня   ",
+        "research_replay_v2_output": "   севодня   ",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -10.55165958404541,
+        "beam_changed_decision": false
+      },
+      {
+        "input_text": "первый\n\n\nвторой",
+        "expected_clean_text": "первый\n\nвторой",
+        "baseline_output": "первый\n\n\nвторой",
+        "current_apply_output": "первый\n\nвторой",
+        "research_replay_v1_output": "первый\n\n\nвторой",
+        "research_replay_v2_output": "первый\n\n\nвторой",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -14.078587532043457,
+        "beam_changed_decision": false
+      }
+    ]
+  },
+  "bucket_counts": {
+    "research_v1_beats_current_apply": 0,
+    "research_v1_worse_than_current_apply": 4,
+    "research_v2_beats_current_apply": 0,
+    "research_v2_worse_than_current_apply": 4,
+    "beam_changed_decision_count": 0
+  },
+  "v2_score_contribution": {
+    "base_component_sum": 0.0,
+    "kenlm_component_sum": -638.6980934143066
+  }
+}
