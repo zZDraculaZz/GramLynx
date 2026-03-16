@@ -1,4 +1,4 @@
-{"input_text":"делемму","expected_clean_text":"дилемму"}
-{"input_text":"превет","expected_clean_text":"привет"}
-{"input_text":"атк","expected_clean_text":"атк"}
-{"input_text":"абракадабра","expected_clean_text":"абракадабра"}
+{"input_text":"делемму","expected_clean_text":"дилемму","left_context":["мне"],"right_context":["сложно"]}
+{"input_text":"превет","expected_clean_text":"привет","left_context":[],"right_context":[]}
+{"input_text":"атк","expected_clean_text":"атк","left_context":["мой"],"right_context":["план"]}
+{"input_text":"абракадабра","expected_clean_text":"абракадабра","left_context":[],"right_context":[]}

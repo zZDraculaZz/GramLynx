@@ -34,6 +34,8 @@ class ReplayCaseResult:
 class TextCleanCase:
     input_text: str
     expected_clean_text: str
+    left_context: tuple[str, ...] = tuple()
+    right_context: tuple[str, ...] = tuple()
 
 
 class _TableScorer:
@@ -75,11 +77,24 @@ def load_text_clean_jsonl(
         if allow_input_alias and not isinstance(input_text, str):
             input_text = payload.get("input")
         expected_clean_text = payload.get("expected_clean_text")
+        left_context = payload.get("left_context", [])
+        right_context = payload.get("right_context", [])
         if not isinstance(input_text, str) or not isinstance(expected_clean_text, str):
+            raise ValueError(f"invalid schema at line {line_no}")
+        if not isinstance(left_context, list) or not all(isinstance(x, str) for x in left_context):
+            raise ValueError(f"invalid schema at line {line_no}")
+        if not isinstance(right_context, list) or not all(isinstance(x, str) for x in right_context):
             raise ValueError(f"invalid schema at line {line_no}")
         if require_non_empty_input and not input_text:
             raise ValueError(f"invalid schema at line {line_no}")
-        rows.append(TextCleanCase(input_text=input_text, expected_clean_text=expected_clean_text))
+        rows.append(
+            TextCleanCase(
+                input_text=input_text,
+                expected_clean_text=expected_clean_text,
+                left_context=tuple(left_context),
+                right_context=tuple(right_context),
+            )
+        )
 
     if not rows:
         raise ValueError(f"empty dataset: {path}")
@@ -100,9 +115,22 @@ def load_text_clean_yaml_smart(path: Path) -> tuple[TextCleanCase, ...]:
             raise ValueError(f"invalid yaml row at index {index}")
         input_text = row.get("input")
         expected_clean_text = row.get("expected_clean_text")
+        left_context = row.get("left_context", [])
+        right_context = row.get("right_context", [])
         if not isinstance(input_text, str) or not isinstance(expected_clean_text, str):
             raise ValueError(f"invalid yaml row schema at index {index}")
-        rows.append(TextCleanCase(input_text=input_text, expected_clean_text=expected_clean_text))
+        if not isinstance(left_context, list) or not all(isinstance(x, str) for x in left_context):
+            raise ValueError(f"invalid yaml row schema at index {index}")
+        if not isinstance(right_context, list) or not all(isinstance(x, str) for x in right_context):
+            raise ValueError(f"invalid yaml row schema at index {index}")
+        rows.append(
+            TextCleanCase(
+                input_text=input_text,
+                expected_clean_text=expected_clean_text,
+                left_context=tuple(left_context),
+                right_context=tuple(right_context),
+            )
+        )
 
     return tuple(rows)
 
@@ -235,7 +263,7 @@ def run_symspell_selector_replay(
         candidates = candidates[:max_candidates]
 
         decision = scaffold.evaluate_token(
-            context=SelectorContext(left_context=tuple(), original_token=token, right_context=tuple()),
+            context=SelectorContext(left_context=case.left_context, original_token=token, right_context=case.right_context),
             candidates=tuple(candidates),
             scorer=scorer,
         )
@@ -282,6 +310,11 @@ def compare_replay_summaries(
             return float(value)
         return 0.0
 
+    total_baseline = int(_num(baseline, "total_cases"))
+    total_challenger = int(_num(challenger, "total_cases"))
+    if total_baseline != total_challenger:
+        raise ValueError("total_cases mismatch")
+
     base_reasons = baseline.get("decision_reason_counts", {})
     chal_reasons = challenger.get("decision_reason_counts", {})
     if not isinstance(base_reasons, dict):
@@ -296,6 +329,7 @@ def compare_replay_summaries(
         reason_deltas[reason] = c - b
 
     return {
+        "total_cases": total_baseline,
         "expected_match_count_delta": int(_num(challenger, "expected_match_count") - _num(baseline, "expected_match_count")),
         "expected_match_rate_delta": round(_num(challenger, "expected_match_rate") - _num(baseline, "expected_match_rate"), 6),
         "expected_match_when_changed_count_delta": int(
@@ -309,3 +343,32 @@ def compare_replay_summaries(
         "kept_original_count_delta": int(_num(challenger, "kept_original_count") - _num(baseline, "kept_original_count")),
         "decision_reason_counts_delta": reason_deltas,
     }
+
+
+def run_ab_replay_and_compare(
+    cases: Sequence[TextCleanCase],
+    *,
+    symspell_source: SymSpellCandidateSource,
+    scorer_a: CandidateScorer,
+    scorer_b: CandidateScorer,
+    max_candidates: int = 5,
+    min_confidence: float = 0.0,
+    min_margin: float = 0.0,
+) -> dict[str, int | float | dict[str, int]]:
+    summary_a = run_symspell_selector_replay(
+        cases,
+        symspell_source=symspell_source,
+        scorer=scorer_a,
+        max_candidates=max_candidates,
+        min_confidence=min_confidence,
+        min_margin=min_margin,
+    )
+    summary_b = run_symspell_selector_replay(
+        cases,
+        symspell_source=symspell_source,
+        scorer=scorer_b,
+        max_candidates=max_candidates,
+        min_confidence=min_confidence,
+        min_margin=min_margin,
+    )
+    return compare_replay_summaries(summary_a, summary_b)
