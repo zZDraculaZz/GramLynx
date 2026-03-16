@@ -110,6 +110,12 @@ What GramLynx v2 is not:
 - Not a replacement of safety shell with model-only behavior.
 - Not a justification for weakening fail-closed behavior.
 
+Canonical offline evaluation support (main-only):
+
+- Shared offline dataset loading/adaptation for accepted workflows should live in `app/core/v2/offline_eval.py`.
+- Offline replay/scorer utilities in tests/research should reuse canonical `app/core/v2` loaders and interfaces where feasible.
+- Keep offline evidence helpers minimal, explicit, and non-runtime by default.
+
 E. Evaluation policy
 
 Standard checks before completion:
@@ -132,6 +138,10 @@ Quality/safety policy:
   - wrong_change
   - smart_regresses_expected_match
   - rollback_related
+  - kept_original_count
+  - expected_match_when_changed_count
+  - expected_match_when_changed_rate
+  - decision_reason_counts
 - Supporting checks are useful for regression signals, but they are not the primary acceptance gate when primary-benchmark evidence is available.
 
 Source-of-truth clarification:
@@ -169,27 +179,26 @@ Phase 5 — Production hardening
 
 - Stability, observability, rollback safety, performance, documentation, and deployment readiness.
 
-G. Branching policy
+G. Repository policy (single canonical main)
 
 main branch:
 
-- Holds the frozen baseline path.
-- Holds accepted safe updates.
-- Holds accepted GramLynx v2 architecture work and scaffolds.
-- Does not automatically enable unfinished V2 runtime behavior by default.
+- `main` is the single canonical source of truth for accepted architecture and implementation.
+- The frozen deterministic baseline remains in-repo as baseline/fallback/reference.
+- Accepted GramLynx v2 architecture and offline evaluation support live in `main`.
+- Unfinished or experimental logic must not be enabled by default in runtime paths.
 
-research/* branches:
+Research/offline work:
 
-- Used for uncertain model/scorer experiments.
-- Used for offline comparisons.
-- Used for exploratory selector/scorer work that is not yet accepted for main.
-- Used when dependencies, model sources, or experiment logic are not yet stable enough for main.
+- Research utilities may exist in the same repository, but they are non-runtime and optional by default.
+- Research/offline helpers should reuse canonical loaders and interfaces from `app/core/v2` where feasible.
+- Do not maintain parallel long-lived mini-cores that duplicate accepted main-path logic.
 
 Merge policy:
 
-- No direct merge of exploratory model/scorer work into main without explicit go/no-go review and evidence.
-- Research findings are not production-ready by default.
-- V2 architecture scaffolds can live in main before final runtime activation, as long as they are isolated and disabled by default.
+- No direct promotion of exploratory scorer/model experiments into default runtime behavior without explicit evidence review.
+- Keep accepted logic centralized in `main`; reduce drift and duplication over time.
+
 
 H. Working style with Codex
 
