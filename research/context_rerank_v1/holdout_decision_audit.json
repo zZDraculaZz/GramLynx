@@ -12,7 +12,7 @@
     "total_cases": 32,
     "exact_match_pass_count": 20,
     "exact_match_pass_rate": 0.625,
-    "wrong_change": 6,
+    "wrong_change": 5,
     "smart_regresses_expected_match": 0,
     "rollback_related": 0
   },
@@ -47,6 +47,11 @@
       "low_margin": 26,
       "low_abs_score": 6
     },
+    "keep_original_decomposition": {
+      "candidate_exists_low_margin": 26,
+      "gold_in_topk_but_keep_original_sentence": 19,
+      "candidate_exists_low_abs_score": 6
+    },
     "token_reason_counts": {
       "no_candidates": 23
     },
@@ -54,6 +59,228 @@
       "candidate_exists_but_fail_closed_or_original_wins": 13,
       "good_candidate_present_but_loses": 19
     },
+    "gold_in_topk_failure_audit": {
+      "gold_in_topk_total": 20,
+      "not_selected_original_wins": 20,
+      "blocked_fail_closed": 16
+    },
+    "score_contribution_audit": {
+      "candidate_exists_token_count": 20,
+      "gold_in_topk_token_count": 20,
+      "sum_original_combined": -411.0722370147705,
+      "sum_best_combined": -411.0722370147705,
+      "sum_gold_combined": -437.3722370147705,
+      "sum_best_minus_original": 0.0,
+      "sum_gold_minus_original": -26.3,
+      "sum_original_base": 0.0,
+      "sum_best_base": 0.0,
+      "sum_gold_base": -26.3,
+      "sum_original_kenlm": -411.0722370147705,
+      "sum_best_kenlm": -411.0722370147705,
+      "sum_gold_kenlm": -411.0722370147705
+    },
+    "gold_failure_examples": [
+      {
+        "input_text": "севодня буду позже",
+        "token": "севодня",
+        "gold": "сегодня",
+        "best_term": "севодня",
+        "best_combined": -17.605514526367188,
+        "original_combined": -17.605514526367188,
+        "gold_combined": -18.605514526367188,
+        "passes_gate": false
+      },
+      {
+        "input_text": "пажалуста скинь адрес",
+        "token": "пажалуста",
+        "gold": "пожалуйста",
+        "best_term": "пажалуста",
+        "best_combined": -17.605514526367188,
+        "original_combined": -17.605514526367188,
+        "gold_combined": -19.605514526367188,
+        "passes_gate": true
+      },
+      {
+        "input_text": "порусски инструкция написана непонятно",
+        "token": "порусски",
+        "gold": "по-русски",
+        "best_term": "порусски",
+        "best_combined": -21.132442474365234,
+        "original_combined": -21.132442474365234,
+        "gold_combined": -22.132442474365234,
+        "passes_gate": false
+      },
+      {
+        "input_text": "попрежнему не работает",
+        "token": "попрежнему",
+        "gold": "по-прежнему",
+        "best_term": "попрежнему",
+        "best_combined": -17.605514526367188,
+        "original_combined": -17.605514526367188,
+        "gold_combined": -18.605514526367188,
+        "passes_gate": false
+      },
+      {
+        "input_text": "изза этого снял звезду",
+        "token": "изза",
+        "gold": "из-за",
+        "best_term": "изза",
+        "best_combined": -21.132442474365234,
+        "original_combined": -21.132442474365234,
+        "gold_combined": -22.132442474365234,
+        "passes_gate": false
+      },
+      {
+        "input_text": "мой телефон +7 (999) 123-45-67 ,пажалуста после 18:00",
+        "token": "пажалуста",
+        "gold": "пожалуйста",
+        "best_term": "пажалуста",
+        "best_combined": -38.76708221435547,
+        "original_combined": -38.76708221435547,
+        "gold_combined": -40.76708221435547,
+        "passes_gate": false
+      },
+      {
+        "input_text": "почта user@mail.example ,пажалуста ответьте",
+        "token": "пажалуста",
+        "gold": "пожалуйста",
+        "best_term": "пажалуста",
+        "best_combined": -28.186298370361328,
+        "original_combined": -28.186298370361328,
+        "gold_combined": -30.186298370361328,
+        "passes_gate": false
+      },
+      {
+        "input_text": "севодня отличная погода ,гуляем",
+        "token": "севодня",
+        "gold": "сегодня",
+        "best_term": "севодня",
+        "best_combined": -21.132442474365234,
+        "original_combined": -21.132442474365234,
+        "gold_combined": -22.132442474365234,
+        "passes_gate": false
+      },
+      {
+        "input_text": "превет всем",
+        "token": "превет",
+        "gold": "привет",
+        "best_term": "превет",
+        "best_combined": -14.078587532043457,
+        "original_combined": -14.078587532043457,
+        "gold_combined": -15.078587532043457,
+        "passes_gate": false
+      },
+      {
+        "input_text": "спосибо за помощь",
+        "token": "спосибо",
+        "gold": "спасибо",
+        "best_term": "спосибо",
+        "best_combined": -17.605514526367188,
+        "original_combined": -17.605514526367188,
+        "gold_combined": -18.605514526367188,
+        "passes_gate": false
+      },
+      {
+        "input_text": "кагда начало встречи ?",
+        "token": "кагда",
+        "gold": "когда",
+        "best_term": "кагда",
+        "best_combined": -17.605514526367188,
+        "original_combined": -17.605514526367188,
+        "gold_combined": -18.605514526367188,
+        "passes_gate": false
+      },
+      {
+        "input_text": "тикет 550e8400-e29b-41d4-a716-446655440000 создан севодня",
+        "token": "севодня",
+        "gold": "сегодня",
+        "best_term": "севодня",
+        "best_combined": -21.132442474365234,
+        "original_combined": -21.132442474365234,
+        "gold_combined": -22.132442474365234,
+        "passes_gate": false
+      },
+      {
+        "input_text": "см ISSUE-42 ,пажалуста",
+        "token": "пажалуста",
+        "gold": "пожалуйста",
+        "best_term": "пажалуста",
+        "best_combined": -17.605514526367188,
+        "original_combined": -17.605514526367188,
+        "gold_combined": -19.605514526367188,
+        "passes_gate": true
+      },
+      {
+        "input_text": "код ```print('севодня')``` пажалуста",
+        "token": "пажалуста",
+        "gold": "пожалуйста",
+        "best_term": "пажалуста",
+        "best_combined": -21.132442474365234,
+        "original_combined": -21.132442474365234,
+        "gold_combined": -23.132442474365234,
+        "passes_gate": true
+      },
+      {
+        "input_text": "встреча 2026-03-14 в 18:30 севодня",
+        "token": "севодня",
+        "gold": "сегодня",
+        "best_term": "севодня",
+        "best_combined": -28.186298370361328,
+        "original_combined": -28.186298370361328,
+        "gold_combined": -29.186298370361328,
+        "passes_gate": false
+      },
+      {
+        "input_text": "ктото позвонил",
+        "token": "ктото",
+        "gold": "кто-то",
+        "best_term": "ктото",
+        "best_combined": -14.078587532043457,
+        "original_combined": -14.078587532043457,
+        "gold_combined": -15.078587532043457,
+        "passes_gate": false
+      },
+      {
+        "input_text": "почемуто не грузит",
+        "token": "почемуто",
+        "gold": "почему-то",
+        "best_term": "почемуто",
+        "best_combined": -17.605514526367188,
+        "original_combined": -17.605514526367188,
+        "gold_combined": -18.605514526367188,
+        "passes_gate": false
+      },
+      {
+        "input_text": "поанглийски и понемецки читаю",
+        "token": "поанглийски",
+        "gold": "по-английски",
+        "best_term": "поанглийски",
+        "best_combined": -20.6345272064209,
+        "original_combined": -20.6345272064209,
+        "gold_combined": -21.6345272064209,
+        "passes_gate": false
+      },
+      {
+        "input_text": "поанглийски и понемецки читаю",
+        "token": "понемецки",
+        "gold": "по-немецки",
+        "best_term": "понемецки",
+        "best_combined": -20.6345272064209,
+        "original_combined": -20.6345272064209,
+        "gold_combined": -21.6345272064209,
+        "passes_gate": false
+      },
+      {
+        "input_text": "нечайно удалил файл",
+        "token": "нечайно",
+        "gold": "нечаянно",
+        "best_term": "нечайно",
+        "best_combined": -17.605514526367188,
+        "original_combined": -17.605514526367188,
+        "gold_combined": -19.905514526367188,
+        "passes_gate": true
+      }
+    ],
     "beam_changed_decision_count": 0,
     "v2_base_component_sum": -1.45,
     "v2_kenlm_component_sum": -636.8082895278931,

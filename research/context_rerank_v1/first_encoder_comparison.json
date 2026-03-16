@@ -1,0 +1,65 @@
+{
+  "model_source": "ai-forever/ruBert-base",
+  "status": "blocked",
+  "blocker": "encoder runtime blocked during model load/run: Can't load the configuration of 'ai-forever/ruBert-base'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure 'ai-forever/ruBert-base' is the correct path to a directory containing a config.json file",
+  "frozen_kenlm_reference": {
+    "full_public": {
+      "baseline": {
+        "exact_match_pass_count": 491,
+        "exact_match_pass_rate": 0.2869666861484512,
+        "wrong_change": 0,
+        "smart_regresses_expected_match": 28,
+        "rollback_related": 0
+      },
+      "current_apply": {
+        "exact_match_pass_count": 491,
+        "exact_match_pass_rate": 0.2869666861484512,
+        "wrong_change": 212,
+        "smart_regresses_expected_match": 0,
+        "rollback_related": 1
+      },
+      "encoder_ranker_replay": {
+        "exact_match_pass_count": 491,
+        "exact_match_pass_rate": 0.2869666861484512,
+        "wrong_change": 0,
+        "smart_regresses_expected_match": 28,
+        "rollback_related": 0
+      },
+      "encoder_beats_current_apply": 28,
+      "encoder_worse_than_current_apply": 28,
+      "keep_original_count": null,
+      "gold_in_topk_selected_count": null,
+      "sample_wins": [],
+      "sample_regressions": []
+    },
+    "holdout": {
+      "baseline": {
+        "exact_match_pass_count": 9,
+        "exact_match_pass_rate": 0.28125,
+        "wrong_change": 0,
+        "smart_regresses_expected_match": 4,
+        "rollback_related": 0
+      },
+      "current_apply": {
+        "exact_match_pass_count": 13,
+        "exact_match_pass_rate": 0.40625,
+        "wrong_change": 5,
+        "smart_regresses_expected_match": 0,
+        "rollback_related": 1
+      },
+      "encoder_ranker_replay": {
+        "exact_match_pass_count": 9,
+        "exact_match_pass_rate": 0.28125,
+        "wrong_change": 0,
+        "smart_regresses_expected_match": 4,
+        "rollback_related": 0
+      },
+      "encoder_beats_current_apply": 0,
+      "encoder_worse_than_current_apply": 4,
+      "keep_original_count": null,
+      "gold_in_topk_selected_count": null,
+      "sample_wins": [],
+      "sample_regressions": []
+    }
+  }
+}

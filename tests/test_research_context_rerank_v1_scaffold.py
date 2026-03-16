@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -17,6 +18,7 @@ from research.context_rerank_v1.replay import (
 )
 from research.context_rerank_v1.report import render_markdown
 from research.context_rerank_v1.scorers.kenlm import KenLMScorer
+from research.context_rerank_v1.scorers.encoder_ranker import EncoderRankerScorer, encoder_backend_available
 from research.context_rerank_v1.candidate_source import LargeLexiconCandidateSource
 
 
@@ -27,6 +29,12 @@ def _kenlm_backend_available() -> bool:
 KENLM_REQUIRED = pytest.mark.skipif(
     not _kenlm_backend_available(),
     reason="kenlm backend is not available in this environment",
+)
+
+
+ENCODER_REQUIRED = pytest.mark.skipif(
+    not encoder_backend_available(),
+    reason="encoder_ranker backend is not available in this environment",
 )
 
 
@@ -221,3 +229,133 @@ def test_candidate_source_normalizes_yo_variant(tmp_path: Path) -> None:
 
     suggestions = [c.term for c in source.top_k("всёо")]
     assert "все" in suggestions
+
+
+def test_encoder_ranker_factory_requires_model_name() -> None:
+    with pytest.raises(ValueError, match="encoder_model_name_or_path"):
+        make_scorer({"scorer_type": "encoder_ranker"})
+
+
+def test_encoder_ranker_factory_fails_fast_when_backend_unavailable(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("research.context_rerank_v1.scorers.encoder_ranker.encoder_backend_available", lambda: False)
+    with pytest.raises(RuntimeError, match="encoder_ranker backend is not available"):
+        make_scorer(
+            {
+                "scorer_type": "encoder_ranker",
+                "encoder_model_name_or_path": "ai-forever/ruBert-base",
+                "batch_size": 2,
+                "max_seq_len": 64,
+                "device": "cpu",
+                "local_files_only": True,
+            }
+        )
+
+
+@ENCODER_REQUIRED
+def test_encoder_ranker_replay_smoke_if_model_path_provided(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    model_name = os.environ.get("GRAMLYNX_ENCODER_MODEL_PATH")
+    if not model_name:
+        pytest.skip("GRAMLYNX_ENCODER_MODEL_PATH is not set")
+
+    dictionary = tmp_path / "dict.txt"
+    dictionary.write_text("сегодня\nбудет\nвстреча\n", encoding="utf-8")
+    corpus = tmp_path / "cases.jsonl"
+    corpus.write_text(
+        json.dumps({"input_text": "севодня будет встреча", "expected_clean_text": "сегодня будет встреча"}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    config = {
+        "top_k": 3,
+        "min_margin": 0.2,
+        "min_abs_score": -25.0,
+        "combined_alpha": 1.0,
+        "combined_beta": 1.0,
+        "beam_width": 2,
+        "dictionary_source": str(dictionary),
+        "corpus_path": str(corpus),
+        "scorer_type": "encoder_ranker",
+        "encoder_model_name_or_path": model_name,
+        "batch_size": 1,
+        "max_seq_len": 64,
+        "device": "cpu",
+        "local_files_only": True,
+    }
+    cases = load_cases(corpus)
+    scorer = make_scorer(config)
+    assert isinstance(scorer, EncoderRankerScorer)
+
+    summary = run_replay(config, cases)
+    assert summary["baseline"]["total_cases"] == 1
+
+
+def test_first_encoder_comparison_reports_blocker_when_backend_missing(tmp_path: Path) -> None:
+    from research.context_rerank_v1.first_encoder_comparison import main as comparison_main
+
+    output = tmp_path / "comparison.json"
+    argv = [
+        "prog",
+        "--output-json",
+        str(output),
+    ]
+
+    import sys
+
+    old_argv = sys.argv
+    try:
+        sys.argv = argv
+        comparison_main()
+    finally:
+        sys.argv = old_argv
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["status"] in {"blocked", "ok"}
+    if payload["status"] == "blocked":
+        assert any(hint in payload["blocker"] for hint in ("torch", "model load/run", "research-encoder"))
+
+
+def test_encoder_backend_blocker_message_smoke() -> None:
+    from research.context_rerank_v1.encoder_setup import encoder_backend_blocker_message, encoder_backend_ready
+
+    msg = encoder_backend_blocker_message()
+    if encoder_backend_ready():
+        assert msg == ""
+    else:
+        assert "research-encoder" in msg
+
+
+def test_first_encoder_comparison_reports_runtime_blocker(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    from research.context_rerank_v1 import first_encoder_comparison as comparison
+
+    monkeypatch.setattr(comparison, "encoder_backend_ready", lambda: True)
+
+    def _boom(_: Path) -> dict[str, object]:
+        raise OSError("403 Forbidden")
+
+    monkeypatch.setattr(comparison, "_run_encoder_report", _boom)
+
+    output = tmp_path / "comparison_runtime_blocked.json"
+    argv = ["prog", "--output-json", str(output)]
+
+    import sys
+
+    old_argv = sys.argv
+    try:
+        sys.argv = argv
+        comparison.main()
+    finally:
+        sys.argv = old_argv
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["status"] == "blocked"
+    assert "model load/run" in payload["blocker"]
+
+
+def test_root_cause_audit_smoke(tmp_path: Path) -> None:
+    from research.context_rerank_v1.root_cause_audit import run_audit
+
+    out = tmp_path / "root_cause_audit.json"
+    payload = run_audit(out)
+    assert out.exists()
+    assert "full_public" in payload
+    assert "candidate_source_failure_slices" in payload["full_public"]

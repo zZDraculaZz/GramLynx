@@ -22,7 +22,7 @@ from app.core.orchestrator import Orchestrator
 from .candidate_source import Candidate, LargeLexiconCandidateSource
 from .decision import fail_closed_pick
 from .report import build_report
-from .scorers import KenLMScorer, SentenceCandidateScorer
+from .scorers import EncoderRankerScorer, KenLMScorer, SentenceCandidateScorer
 
 TOKEN_RE = re.compile(r"\b[\w-]+\b", flags=re.UNICODE)
 
@@ -122,25 +122,39 @@ def _resolve_model_path(model_path_or_url: str) -> Path:
 
 def make_scorer(config: dict[str, Any]) -> SentenceCandidateScorer:
     scorer_type = str(config["scorer_type"])
-    if scorer_type != "kenlm":
-        raise ValueError(f"unsupported scorer_type: {scorer_type}")
 
-    model_path_raw = config.get("kenlm_model_path")
-    if model_path_raw:
-        resolved_path = _resolve_model_path(str(model_path_raw))
-        return KenLMScorer(model_path=resolved_path)
+    if scorer_type == "kenlm":
+        model_path_raw = config.get("kenlm_model_path")
+        if model_path_raw:
+            resolved_path = _resolve_model_path(str(model_path_raw))
+            return KenLMScorer(model_path=resolved_path)
 
-    lm_corpus_path_raw = config.get("kenlm_training_corpus_path")
-    if not lm_corpus_path_raw:
-        raise ValueError(
-            "leakage-safe mode requires independent scorer source: set kenlm_model_path or kenlm_training_corpus_path"
+        lm_corpus_path_raw = config.get("kenlm_training_corpus_path")
+        if not lm_corpus_path_raw:
+            raise ValueError(
+                "leakage-safe mode requires independent scorer source: set kenlm_model_path or kenlm_training_corpus_path"
+            )
+
+        lm_corpus_path = Path(str(lm_corpus_path_raw))
+        lm_texts = _load_external_lm_corpus(lm_corpus_path)
+        temp_path = Path(tempfile.gettempdir()) / "gramlynx_context_rerank_v1_external_lm.arpa"
+        trained_path = KenLMScorer.train_bigram_arpa(corpus_texts=lm_texts, output_path=temp_path)
+        return KenLMScorer(model_path=trained_path)
+
+    if scorer_type == "encoder_ranker":
+        model_name = str(config.get("encoder_model_name_or_path", ""))
+        if not model_name:
+            raise ValueError("encoder_ranker requires encoder_model_name_or_path")
+        return EncoderRankerScorer(
+            model_name_or_path=model_name,
+            batch_size=int(config.get("batch_size", 8)),
+            max_seq_len=int(config.get("max_seq_len", 128)),
+            device=str(config.get("device", "cpu")),
+            cache_dir=str(config["cache_path"]) if config.get("cache_path") else None,
+            local_files_only=bool(config.get("local_files_only", False)),
         )
 
-    lm_corpus_path = Path(str(lm_corpus_path_raw))
-    lm_texts = _load_external_lm_corpus(lm_corpus_path)
-    temp_path = Path(tempfile.gettempdir()) / "gramlynx_context_rerank_v1_external_lm.arpa"
-    trained_path = KenLMScorer.train_bigram_arpa(corpus_texts=lm_texts, output_path=temp_path)
-    return KenLMScorer(model_path=trained_path)
+    raise ValueError(f"unsupported scorer_type: {scorer_type}")
 
 
 def _candidate_base_score(candidate: Candidate, rank: int) -> float:
@@ -160,8 +174,6 @@ def run_replay(config: dict[str, Any], cases: tuple[ReplayCase, ...]) -> dict[st
         extra_dictionary_paths=extra_dictionary_sources,
     )
     scorer = make_scorer(config)
-    if not isinstance(scorer, KenLMScorer):
-        raise TypeError("kenlm_v2 requires KenLMScorer")
 
     current_apply = _run_current_apply(cases)
     alpha = float(config.get("combined_alpha", 1.0))
@@ -236,7 +248,7 @@ def _run_current_apply(cases: tuple[ReplayCase, ...]) -> dict[str, CurrentApplyR
 def _apply_research_replay_v1(
     text: str,
     candidate_source: LargeLexiconCandidateSource,
-    scorer: KenLMScorer,
+    scorer: SentenceCandidateScorer,
     min_margin: float,
     min_abs_score: float,
     alpha: float,
@@ -274,7 +286,7 @@ def _apply_research_replay_v1(
 def _apply_research_replay_v2(
     text: str,
     candidate_source: LargeLexiconCandidateSource,
-    scorer: KenLMScorer,
+    scorer: SentenceCandidateScorer,
     min_margin: float,
     min_abs_score: float,
     alpha: float,

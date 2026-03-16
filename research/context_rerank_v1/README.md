@@ -12,6 +12,7 @@ This directory contains a **research-only scaffold** for context-aware candidate
 - `candidate_source.py`: top-k candidate extraction from a large lexicon source.
 - `scorers/base.py`: sentence-level scorer interface.
 - `scorers/kenlm.py`: real KenLM-backed sentence scorer (`kenlm.Model`) + deterministic ARPA trainer helper.
+- `scorers/encoder_ranker.py`: research-only encoder-based candidate scorer scaffold (optional backend).
 - `decision.py`: fail-closed no-apply logic.
 - `replay.py`: offline replay flow with mode comparison.
 - `report.py`: aggregates and buckets for offline analysis.
@@ -50,10 +51,48 @@ Replay computes comparable outputs for:
 
 ## CI note for research tests
 - KenLM backend is optional in CI environments.
-- Tests that require a real `kenlm` backend are skipped when the backend is unavailable.
-- When `kenlm` is installed, those tests execute normally.
+- Encoder-ranker backend (`torch` + `transformers`) is also optional in CI environments.
+- Tests that require these real backends are skipped when unavailable.
+- When dependencies are installed, backend-dependent tests execute normally.
+
+## Encoder-ranker scaffold (research-only)
+
+- Install optional encoder research dependencies (research-only):
+  - `pip install -e '.[research-encoder]'`
+  - This extra is optional and does not affect default production/main-path dependency set.
+- `scorer_type: encoder_ranker` enables an encoder-based candidate scorer over the existing shortlist.
+- Required field: `encoder_model_name_or_path`.
+- Optional fields: `batch_size`, `max_seq_len`, `device`, `cache_path`, `local_files_only`.
+- This scorer is offline research-only and is **not** connected to production runtime.
 
 ## KenLM v2 reranking
 - Candidate score = weighted combination of base candidate score and KenLM sequence score.
 - Search = beam search over sentence-level candidate sequences (`beam_width`).
 - Reporting includes base/kenlm contribution sums and count of cases where beam search changed decision vs v1.
+
+
+## First encoder offline comparison (research-only)
+- Selected model source for first pass: `ai-forever/ruBert-base`.
+- Why this source:
+  - practical HuggingFace model with Russian coverage;
+  - works with existing `AutoModelForMaskedLM` scorer implementation without rewrite;
+  - realistic baseline for first contextual signal check over shortlist reranking.
+- New comparison helper:
+  - `python -m research.context_rerank_v1.first_encoder_comparison --output-json research/context_rerank_v1/first_encoder_comparison.json`
+
+- Backend check helper (research-only):
+  - `python -c "from research.context_rerank_v1.encoder_setup import encoder_backend_blocker_message; print(encoder_backend_blocker_message() or 'encoder backend ready')"`
+- It compares against frozen references from:
+  - `full_public_pretrained_report.json`
+  - `holdout_pretrained_report.json`
+- If `torch`/`transformers` are unavailable, the script returns `status=blocked` and records blocker details without fabricating encoder metrics.
+
+
+## Candidate + punctuation root-cause audit (research-only)
+- Diagnosis-only helper (no production integration, no scorer tuning):
+  - `python -m research.context_rerank_v1.root_cause_audit --output-json research/context_rerank_v1/candidate_punctuation_root_cause_audit.json`
+- Audit includes slices for:
+  - candidate-source failures (`no candidate`, `gold absent in top-k`, `gold in top-k but not selected`, token rejection);
+  - punctuation/chat-noise classes and retrieval/selection breakdown;
+  - normalization probes (`lowercase`, `ё→е`, punctuation stripping, basic chat-noise cleanup);
+  - representative examples and ranked bottlenecks.

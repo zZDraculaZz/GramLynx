@@ -118,6 +118,24 @@ def _run_kenlm_v2_with_audit(
     keep_reason = Counter()
     token_reason = Counter()
     pattern_counter = Counter()
+    keep_decomposition = Counter()
+    gold_in_topk_audit = Counter()
+    score_contribution = {
+        "candidate_exists_token_count": 0,
+        "gold_in_topk_token_count": 0,
+        "sum_original_combined": 0.0,
+        "sum_best_combined": 0.0,
+        "sum_gold_combined": 0.0,
+        "sum_best_minus_original": 0.0,
+        "sum_gold_minus_original": 0.0,
+        "sum_original_base": 0.0,
+        "sum_best_base": 0.0,
+        "sum_gold_base": 0.0,
+        "sum_original_kenlm": 0.0,
+        "sum_best_kenlm": 0.0,
+        "sum_gold_kenlm": 0.0,
+    }
+    gold_failure_examples: list[dict[str, Any]] = []
     v2_base_sum = 0.0
     v2_kenlm_sum = 0.0
     beam_changed = 0
@@ -133,6 +151,7 @@ def _run_kenlm_v2_with_audit(
             continue
 
         per_pos_options: list[list[tuple[str, float]]] = []
+        per_pos_details: list[dict[str, Any]] = []
         sentence_has_candidates = False
         sentence_good_target_missing = False
         sentence_good_target_present_but_loses = False
@@ -164,6 +183,103 @@ def _run_kenlm_v2_with_audit(
                     dedup[term] = base
             ordered = sorted(dedup.items(), key=lambda item: (-item[1], item[0]))
             per_pos_options.append(ordered)
+            per_pos_details.append(
+                {
+                    "token": token,
+                    "target": target,
+                    "target_in_topk": target_in_topk,
+                    "options": ordered,
+                }
+            )
+
+        changed_positions = [
+            idx
+            for idx, detail in enumerate(per_pos_details)
+            if detail.get("target") is not None and detail["target"] != detail["token"]
+        ]
+
+        for idx in changed_positions:
+            detail = per_pos_details[idx]
+            options = detail["options"]
+            token = detail["token"]
+            target = detail["target"]
+
+            if len(options) <= 1:
+                gold_in_topk_audit["gold_absent_from_topk"] += 1
+                continue
+
+            score_rows: list[tuple[str, float, float, float]] = []
+            for term, base in options:
+                ken = scorer.score(tokens, idx, term)
+                combined = _combined_score(base, ken, alpha=alpha, beta=beta)
+                score_rows.append((term, combined, base, ken))
+            score_rows.sort(key=lambda row: (-row[1], row[0]))
+
+            best_term, best_combined_tok, best_base_tok, best_ken_tok = score_rows[0]
+            second_tok = score_rows[1][1] if len(score_rows) > 1 else float("-inf")
+            passes = best_combined_tok >= min_abs_score and (
+                second_tok == float("-inf") or (best_combined_tok - second_tok) >= min_margin
+            )
+
+            by_term = {term: (combined, base, ken) for term, combined, base, ken in score_rows}
+            original_combined, original_base, original_ken = by_term[token]
+
+            score_contribution["candidate_exists_token_count"] += 1
+            score_contribution["sum_original_combined"] += original_combined
+            score_contribution["sum_best_combined"] += best_combined_tok
+            score_contribution["sum_best_minus_original"] += best_combined_tok - original_combined
+            score_contribution["sum_original_base"] += original_base
+            score_contribution["sum_best_base"] += best_base_tok
+            score_contribution["sum_original_kenlm"] += original_ken
+            score_contribution["sum_best_kenlm"] += best_ken_tok
+
+            if detail["target_in_topk"]:
+                gold_in_topk_audit["gold_in_topk_total"] += 1
+                gold_combined, gold_base, gold_ken = by_term[target]
+                score_contribution["gold_in_topk_token_count"] += 1
+                score_contribution["sum_gold_combined"] += gold_combined
+                score_contribution["sum_gold_minus_original"] += gold_combined - original_combined
+                score_contribution["sum_gold_base"] += gold_base
+                score_contribution["sum_gold_kenlm"] += gold_ken
+
+                if passes and best_term == target:
+                    gold_in_topk_audit["selected"] += 1
+                elif best_term == token:
+                    gold_in_topk_audit["not_selected_original_wins"] += 1
+                    if not passes:
+                        gold_in_topk_audit["blocked_fail_closed"] += 1
+                    if len(gold_failure_examples) < 20:
+                        gold_failure_examples.append(
+                            {
+                                "input_text": input_text,
+                                "token": token,
+                                "gold": target,
+                                "best_term": best_term,
+                                "best_combined": best_combined_tok,
+                                "original_combined": original_combined,
+                                "gold_combined": gold_combined,
+                                "passes_gate": passes,
+                            }
+                        )
+                elif passes:
+                    gold_in_topk_audit["not_selected_other_candidate_wins"] += 1
+                    if len(gold_failure_examples) < 20:
+                        gold_failure_examples.append(
+                            {
+                                "input_text": input_text,
+                                "token": token,
+                                "gold": target,
+                                "best_term": best_term,
+                                "best_combined": best_combined_tok,
+                                "original_combined": original_combined,
+                                "gold_combined": gold_combined,
+                                "passes_gate": passes,
+                            }
+                        )
+                else:
+                    gold_in_topk_audit["blocked_fail_closed"] += 1
+            else:
+                gold_in_topk_audit["gold_absent_from_topk"] += 1
 
         beam: list[BeamState] = [BeamState(tokens=tuple(), base_score_sum=0.0, changed_count=0)]
         for idx, options in enumerate(per_pos_options):
@@ -223,6 +339,22 @@ def _run_kenlm_v2_with_audit(
             if keep_reason_label is None:
                 keep_reason_label = "candidate_exists_but_fail_closed_or_original_wins"
             keep_reason[keep_reason_label] += 1
+            if keep_reason_label == "candidate_exists_but_best_is_original":
+                keep_decomposition["candidate_exists_original_wins_by_combined"] += 1
+            elif keep_reason_label == "low_margin":
+                keep_decomposition["candidate_exists_low_margin"] += 1
+            elif keep_reason_label == "low_abs_score":
+                keep_decomposition["candidate_exists_low_abs_score"] += 1
+            elif keep_reason_label == "no_candidate_sentence":
+                keep_decomposition["no_candidate_sentence"] += 1
+            else:
+                keep_decomposition["candidate_exists_other_fail_closed"] += 1
+
+            if sentence_good_target_present_but_loses:
+                keep_decomposition["gold_in_topk_but_keep_original_sentence"] += 1
+            if sentence_good_target_missing:
+                keep_decomposition["gold_absent_from_topk_sentence"] += 1
+
             if keep_reason_label == "no_candidate_sentence":
                 pattern_counter["no_candidate_sentence"] += 1
             elif sentence_good_target_missing:
@@ -245,8 +377,12 @@ def _run_kenlm_v2_with_audit(
     return outputs, {
         "keep_original_count": sum(keep_reason.values()),
         "keep_reason_counts": dict(keep_reason),
+        "keep_original_decomposition": dict(keep_decomposition),
         "token_reason_counts": dict(token_reason),
         "pattern_counts": dict(pattern_counter),
+        "gold_in_topk_failure_audit": dict(gold_in_topk_audit),
+        "score_contribution_audit": score_contribution,
+        "gold_failure_examples": gold_failure_examples,
         "beam_changed_decision_count": beam_changed,
         "v2_base_component_sum": v2_base_sum,
         "v2_kenlm_component_sum": v2_kenlm_sum,
