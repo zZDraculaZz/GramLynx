@@ -389,6 +389,7 @@ def test_candidate_source_retrieval_normalization_hyphen_variant(tmp_path: Path)
     assert "из-за" in improved_terms
 
 
+@KENLM_REQUIRED
 def test_run_replay_current_apply_cache_roundtrip(tmp_path: Path) -> None:
     dictionary = tmp_path / "dict.txt"
     dictionary.write_text("сегодня\nбудет\nвстреча\n", encoding="utf-8")

@@ -1,0 +1,4 @@
+{"input_text":"делемму","expected_clean_text":"дилемму"}
+{"input_text":"превет","expected_clean_text":"привет"}
+{"input_text":"атк","expected_clean_text":"атк"}
+{"input_text":"абракадабра","expected_clean_text":"абракадабра"}

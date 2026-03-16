@@ -24,6 +24,7 @@ from app.core.orchestrator import Orchestrator
 from app.core.policy import get_policy
 from app.core.protected_zones.detector import mask_protected_zones, restore_protected_zones
 from app.core.stages.helpers import deterministic_spelling as ds
+from app.core.v2.offline_eval import load_text_clean_jsonl
 from tests import eval_ruspellgold_harness
 
 DEFAULT_FULL_PUBLIC = Path("tests/cases/ruspellgold_full_public.jsonl")
@@ -72,22 +73,7 @@ class CaseOutcome:
 
 
 def _load_cases(path: Path) -> tuple[Case, ...]:
-    rows = []
-    for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
-        raw = line.strip()
-        if not raw:
-            continue
-        payload = json.loads(raw)
-        if not isinstance(payload, dict):
-            raise ValueError(f"invalid row type at line {i}")
-        inp = payload.get("input_text")
-        exp = payload.get("expected_clean_text")
-        if not isinstance(inp, str) or not isinstance(exp, str) or not inp:
-            raise ValueError(f"invalid schema at line {i}")
-        rows.append(Case(input_text=inp, expected_clean_text=exp))
-    if not rows:
-        raise ValueError(f"empty dataset: {path}")
-    return tuple(rows)
+    return tuple(Case(input_text=row.input_text, expected_clean_text=row.expected_clean_text) for row in load_text_clean_jsonl(path))
 
 
 def _runtime_config(candidate_enabled: bool, shadow_mode: bool, backend: str, dictionary_source: str) -> str:
