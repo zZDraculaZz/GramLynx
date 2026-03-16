@@ -6,6 +6,7 @@ from difflib import SequenceMatcher
 from typing import List
 
 from app.core.confidence import aggregate_confidence
+from app.core.config import load_app_config
 from app.core.model import TextDocument
 from app.core.observability import Metrics, log_event
 from app.core.policy import get_policy
@@ -34,6 +35,17 @@ class Orchestrator:
             metrics=self.metrics,
         )
         self.metrics.requests_total[mode] = self.metrics.requests_total.get(mode, 0) + 1
+        app_cfg = load_app_config()
+        v2_scaffold_enabled = bool(app_cfg.rulepack.v2_selector_scaffold_enabled)
+        v2_scaffold_available = False
+        if v2_scaffold_enabled:
+            from app.core.v2 import make_v2_selector_scaffold
+
+            _ = make_v2_selector_scaffold(
+                min_confidence=float(app_cfg.rulepack.v2_selector_min_confidence),
+                min_margin=float(app_cfg.rulepack.v2_selector_min_margin),
+            )
+            v2_scaffold_available = True
 
         start_time = time.time()
         document.working_text, document.placeholders_map, document.protected_spans = (
@@ -90,6 +102,8 @@ class Orchestrator:
             "candidate_rejected_morph_unknown_count": getattr(document, "candidate_rejected_morph_unknown_count", 0),
             "candidate_ambiguous_tie_count": getattr(document, "candidate_ambiguous_tie_count", 0),
             "candidate_shadow_skipped_count": getattr(document, "candidate_shadow_skipped_count", 0),
+            "v2_selector_scaffold_enabled": v2_scaffold_enabled,
+            "v2_selector_scaffold_available": v2_scaffold_available,
         }
 
         total_ms = (time.time() - start_time) * 1000

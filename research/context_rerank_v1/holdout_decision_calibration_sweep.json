@@ -1,0 +1,129 @@
+{
+  "dataset": "tests/cases/product_regression_user_texts.yml",
+  "variants": [
+    {
+      "name": "baseline",
+      "params": {
+        "base_scale": 1.0,
+        "original_bias": 0.0,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "total_cases": 32,
+      "exact_match_pass_count": 9,
+      "exact_match_pass_rate": 0.28125,
+      "wrong_change": 0,
+      "smart_regresses_expected_match": 12,
+      "rollback_related": 0,
+      "keep_original_count": 32,
+      "gold_in_topk_selected_count": 0,
+      "gold_in_topk_total": 20,
+      "original_wins_before": 20,
+      "original_wins_after": 20,
+      "blocked_fail_closed_before": 16,
+      "blocked_fail_closed_after": 16,
+      "converted_gold_keep_to_selected": 0,
+      "introduced_harmful_wrong_change": 0,
+      "wrong_candidate_wins": 0,
+      "keep_reason_counts": {
+        "no_candidate": 0,
+        "low_abs_score": 6,
+        "low_margin": 26,
+        "original_wins": 0
+      }
+    },
+    {
+      "name": "base_penalty_relaxed",
+      "params": {
+        "base_scale": 0.7,
+        "original_bias": 0.0,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "total_cases": 32,
+      "exact_match_pass_count": 9,
+      "exact_match_pass_rate": 0.28125,
+      "wrong_change": 0,
+      "smart_regresses_expected_match": 12,
+      "rollback_related": 0,
+      "keep_original_count": 32,
+      "gold_in_topk_selected_count": 0,
+      "gold_in_topk_total": 20,
+      "original_wins_before": 20,
+      "original_wins_after": 20,
+      "blocked_fail_closed_before": 16,
+      "blocked_fail_closed_after": 20,
+      "converted_gold_keep_to_selected": 0,
+      "introduced_harmful_wrong_change": 0,
+      "wrong_candidate_wins": 0,
+      "keep_reason_counts": {
+        "no_candidate": 0,
+        "low_abs_score": 6,
+        "low_margin": 26,
+        "original_wins": 0
+      }
+    },
+    {
+      "name": "anti_original_bias",
+      "params": {
+        "base_scale": 1.0,
+        "original_bias": -0.7,
+        "alpha": 1.0,
+        "beta": 1.0
+      },
+      "total_cases": 32,
+      "exact_match_pass_count": 9,
+      "exact_match_pass_rate": 0.28125,
+      "wrong_change": 0,
+      "smart_regresses_expected_match": 12,
+      "rollback_related": 0,
+      "keep_original_count": 32,
+      "gold_in_topk_selected_count": 0,
+      "gold_in_topk_total": 20,
+      "original_wins_before": 20,
+      "original_wins_after": 20,
+      "blocked_fail_closed_before": 16,
+      "blocked_fail_closed_after": 20,
+      "converted_gold_keep_to_selected": 0,
+      "introduced_harmful_wrong_change": 0,
+      "wrong_candidate_wins": 0,
+      "keep_reason_counts": {
+        "no_candidate": 0,
+        "low_abs_score": 6,
+        "low_margin": 26,
+        "original_wins": 0
+      }
+    },
+    {
+      "name": "kenlm_upweight",
+      "params": {
+        "base_scale": 1.0,
+        "original_bias": 0.0,
+        "alpha": 0.7,
+        "beta": 1.3
+      },
+      "total_cases": 32,
+      "exact_match_pass_count": 9,
+      "exact_match_pass_rate": 0.28125,
+      "wrong_change": 0,
+      "smart_regresses_expected_match": 12,
+      "rollback_related": 0,
+      "keep_original_count": 32,
+      "gold_in_topk_selected_count": 0,
+      "gold_in_topk_total": 20,
+      "original_wins_before": 20,
+      "original_wins_after": 20,
+      "blocked_fail_closed_before": 16,
+      "blocked_fail_closed_after": 20,
+      "converted_gold_keep_to_selected": 0,
+      "introduced_harmful_wrong_change": 0,
+      "wrong_candidate_wins": 0,
+      "keep_reason_counts": {
+        "no_candidate": 0,
+        "low_abs_score": 13,
+        "low_margin": 19,
+        "original_wins": 0
+      }
+    }
+  ]
+}

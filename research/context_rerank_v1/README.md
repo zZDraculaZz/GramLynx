@@ -1,0 +1,112 @@
+# Context-Aware Candidate Selection v1 (Offline Research Scaffold)
+
+This directory contains a **research-only scaffold** for context-aware candidate selection.
+
+## Scope
+- This is **not** a production path.
+- This scaffold is **not connected** to the main `/clean` runtime pipeline.
+- It **does not** change API contract or runtime safe defaults.
+- It exists only for offline replay/evaluation experiments.
+
+## v1 design
+- `candidate_source.py`: top-k candidate extraction from a large lexicon source.
+- `scorers/base.py`: sentence-level scorer interface.
+- `scorers/kenlm.py`: real KenLM-backed sentence scorer (`kenlm.Model`) + deterministic ARPA trainer helper.
+- `scorers/encoder_ranker.py`: research-only encoder-based candidate scorer scaffold (optional backend).
+- `decision.py`: fail-closed no-apply logic.
+- `replay.py`: offline replay flow with mode comparison.
+- `report.py`: aggregates and buckets for offline analysis.
+
+## Compared modes
+Replay computes comparable outputs for:
+- `baseline` (keep original text)
+- `current_apply` (runtime smart-mode output, used as reference)
+- `research_replay_v1` (greedy per-token rerank, weaker baseline)
+- `research_replay_v2` (combined base+KenLM score with beam search and fail-closed fallback)
+
+## Leakage-safe KenLM setup
+- Install research dependency: `pip install kenlm`.
+- `scorer_type: kenlm` uses a real `kenlm.Model` sentence score.
+- Scorer source **must be independent** from evaluation targets:
+  - Option A (preferred in this step): `kenlm_model_path` -> external pre-trained ARPA model path/URL.
+  - Option B: `kenlm_training_corpus_path` -> independent plain-text corpus.
+- `replay.py` intentionally refuses eval-target self-training (no auto-training from `expected_clean_text` of eval set).
+
+## Pretrained source used in examples
+- External public source: `Lednik7/nto-ai-text-recognition`.
+- Artifact URL: `https://raw.githubusercontent.com/Lednik7/nto-ai-text-recognition/main/models/nto_kenlm_model10.arpa`.
+- The model is downloaded to local temp cache on first run when URL is provided.
+
+## Included independent corpus (fallback research use)
+- `resources/external_lm_corpus_ru.txt` provides a small independent corpus for deterministic offline experiments when prebuilt model is unavailable.
+
+## Quick start
+1. Use one of the example configs:
+   - Pretrained full public: `research/context_rerank_v1/examples/full_public_pretrained.yaml`
+   - Pretrained holdout: `research/context_rerank_v1/examples/product_holdout_pretrained.yaml`
+   - Self-built baseline: `research/context_rerank_v1/examples/full_public_selfbuilt.yaml`
+2. Run replay:
+   - `python -m research.context_rerank_v1.replay --config research/context_rerank_v1/examples/full_public_pretrained.yaml --output-json research/context_rerank_v1/full_public_pretrained_report.json`
+
+
+## CI note for research tests
+- KenLM backend is optional in CI environments.
+- Encoder-ranker backend (`torch` + `transformers`) is also optional in CI environments.
+- Tests that require these real backends are skipped when unavailable.
+- When dependencies are installed, backend-dependent tests execute normally.
+
+## Encoder-ranker scaffold (research-only)
+
+- Install optional encoder research dependencies (research-only):
+  - `pip install -e '.[research-encoder]'`
+  - This extra is optional and does not affect default production/main-path dependency set.
+- `scorer_type: encoder_ranker` enables an encoder-based candidate scorer over the existing shortlist.
+- Required field: `encoder_model_name_or_path`.
+- Optional fields: `batch_size`, `max_seq_len`, `device`, `cache_path`, `local_files_only`.
+- This scorer is offline research-only and is **not** connected to production runtime.
+
+## KenLM v2 reranking
+- Candidate score = weighted combination of base candidate score and KenLM sequence score.
+- Search = beam search over sentence-level candidate sequences (`beam_width`).
+- Reporting includes base/kenlm contribution sums and count of cases where beam search changed decision vs v1.
+
+
+## First encoder offline comparison (research-only)
+- Selected model source for first pass: `ai-forever/ruBert-base`.
+- Why this source:
+  - practical HuggingFace model with Russian coverage;
+  - works with existing `AutoModelForMaskedLM` scorer implementation without rewrite;
+  - realistic baseline for first contextual signal check over shortlist reranking.
+- New comparison helper:
+  - `python -m research.context_rerank_v1.first_encoder_comparison --output-json research/context_rerank_v1/first_encoder_comparison.json`
+
+- Backend check helper (research-only):
+  - `python -c "from research.context_rerank_v1.encoder_setup import encoder_backend_blocker_message; print(encoder_backend_blocker_message() or 'encoder backend ready')"`
+- It compares against frozen references from:
+  - `full_public_pretrained_report.json`
+  - `holdout_pretrained_report.json`
+- If `torch`/`transformers` are unavailable, the script returns `status=blocked` and records blocker details without fabricating encoder metrics.
+
+
+## Candidate + punctuation root-cause audit (research-only)
+- Diagnosis-only helper (no production integration, no scorer tuning):
+  - `python -m research.context_rerank_v1.root_cause_audit --output-json research/context_rerank_v1/candidate_punctuation_root_cause_audit.json`
+- Audit includes slices for:
+  - candidate-source failures (`no candidate`, `gold absent in top-k`, `gold in top-k but not selected`, token rejection);
+  - punctuation/chat-noise classes and retrieval/selection breakdown;
+  - normalization probes (`lowercase`, `ё→е`, punctuation stripping, basic chat-noise cleanup);
+  - representative examples and ranked bottlenecks.
+
+
+## Retrieval normalization comparison (research-only)
+- Before/after comparison helper for shortlist-quality impact:
+  - `PYTHONPATH=/workspace/GramLynx python research/context_rerank_v1/compute_retrieval_coverage.py`
+- Runs root-cause slices + replay + decision-audit in two modes:
+  - `enable_retrieval_normalization: false` (before)
+  - `enable_retrieval_normalization: true` (after)
+
+- Optional performance flag for long full-public runs: set `current_apply_cache_path` in replay config to cache canonical `current_apply` outputs between runs (research-only).
+
+## Shortlist-quality focus (research-only)
+- Candidate retrieval now uses narrow noisy-token variants (wrapper stripping + `#/@` bare + limited `по-/из-` hyphen restoration) and prioritizes `ё` surface variants in shortlist ranking.
+- This is research-only retrieval instrumentation and does not change production runtime path.

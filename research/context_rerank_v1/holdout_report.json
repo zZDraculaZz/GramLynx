@@ -1,0 +1,71 @@
+{
+  "baseline": {
+    "total_cases": 32,
+    "exact_match_pass_count": 9,
+    "exact_match_pass_rate": 0.28125,
+    "wrong_change": 0,
+    "smart_regresses_expected_match": 4,
+    "rollback_related": 0
+  },
+  "current_apply": {
+    "total_cases": 32,
+    "exact_match_pass_count": 13,
+    "exact_match_pass_rate": 0.40625,
+    "wrong_change": 5,
+    "smart_regresses_expected_match": 0,
+    "rollback_related": 1
+  },
+  "research_replay": {
+    "total_cases": 32,
+    "exact_match_pass_count": 9,
+    "exact_match_pass_rate": 0.28125,
+    "wrong_change": 0,
+    "smart_regresses_expected_match": 4,
+    "rollback_related": 0
+  },
+  "buckets": {
+    "research_beats_current_apply": [],
+    "research_worse_than_current_apply": [
+      {
+        "input_text": "привет ,как дела ?",
+        "expected_clean_text": "привет, как дела?",
+        "baseline_output": "привет ,как дела ?",
+        "current_apply_output": "привет, как дела?",
+        "research_replay_output": "привет ,как дела ?",
+        "current_apply_rollback_related": false,
+        "research_rollback_related": false
+      },
+      {
+        "input_text": "это   тест   без   паники",
+        "expected_clean_text": "это тест без паники",
+        "baseline_output": "это   тест   без   паники",
+        "current_apply_output": "это тест без паники",
+        "research_replay_output": "это   тест   без   паники",
+        "current_apply_rollback_related": false,
+        "research_rollback_related": false
+      },
+      {
+        "input_text": "   севодня   ",
+        "expected_clean_text": "севодня",
+        "baseline_output": "   севодня   ",
+        "current_apply_output": "севодня",
+        "research_replay_output": "   севодня   ",
+        "current_apply_rollback_related": false,
+        "research_rollback_related": false
+      },
+      {
+        "input_text": "первый\n\n\nвторой",
+        "expected_clean_text": "первый\n\nвторой",
+        "baseline_output": "первый\n\n\nвторой",
+        "current_apply_output": "первый\n\nвторой",
+        "research_replay_output": "первый\n\n\nвторой",
+        "current_apply_rollback_related": false,
+        "research_rollback_related": false
+      }
+    ]
+  },
+  "bucket_counts": {
+    "research_beats_current_apply": 0,
+    "research_worse_than_current_apply": 4
+  }
+}
