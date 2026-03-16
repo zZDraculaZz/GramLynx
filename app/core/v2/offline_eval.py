@@ -372,3 +372,44 @@ def run_ab_replay_and_compare(
         min_margin=min_margin,
     )
     return compare_replay_summaries(summary_a, summary_b)
+
+
+def run_slice_scorer_comparison(
+    cases_or_path: Sequence[TextCleanCase] | Path,
+    *,
+    symspell_source: SymSpellCandidateSource,
+    scorer_a: CandidateScorer,
+    scorer_b: CandidateScorer,
+    max_candidates: int = 5,
+    min_confidence: float = 0.0,
+    min_margin: float = 0.0,
+) -> dict[str, dict[str, int | float | dict[str, int]]]:
+    """Run canonical scorer A/B comparison for a replay slice.
+
+    Returns both per-scorer summaries plus the challenger-vs-baseline delta.
+    """
+
+    cases = load_text_clean_cases(cases_or_path) if isinstance(cases_or_path, Path) else tuple(cases_or_path)
+
+    summary_a = run_symspell_selector_replay(
+        cases,
+        symspell_source=symspell_source,
+        scorer=scorer_a,
+        max_candidates=max_candidates,
+        min_confidence=min_confidence,
+        min_margin=min_margin,
+    )
+    summary_b = run_symspell_selector_replay(
+        cases,
+        symspell_source=symspell_source,
+        scorer=scorer_b,
+        max_candidates=max_candidates,
+        min_confidence=min_confidence,
+        min_margin=min_margin,
+    )
+
+    return {
+        "summary_a": summary_a,
+        "summary_b": summary_b,
+        "delta": compare_replay_summaries(summary_a, summary_b),
+    }
