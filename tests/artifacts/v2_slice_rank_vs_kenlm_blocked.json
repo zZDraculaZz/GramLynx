@@ -1,0 +1,20 @@
+{
+  "status": "blocked",
+  "comparison": "RankBasedScorer_vs_KenLMScorer",
+  "dataset": "tests/cases/v2_token_replay_slice_a.jsonl",
+  "kenlm_backend_available": false,
+  "required_inputs": {
+    "kenlm_backend_python_package": "kenlm",
+    "kenlm_model_path": "arpa or binary model file"
+  },
+  "detected_model_candidates": [
+    "tests/artifacts/kenlm_slice_model.arpa",
+    "research/context_rerank_v1/external_lm.arpa",
+    "app/resources/kenlm.arpa"
+  ],
+  "existing_model_candidates": [],
+  "blocking_requirements": [
+    "Install kenlm backend in active environment (e.g. optional scorers extra)",
+    "Provide a valid KenLM model path (arpa/binary) accessible to runner --kenlm-model"
+  ]
+}

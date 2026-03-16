@@ -1,0 +1,2 @@
+{"case_id":"apply_candidate_when_confident","original_token":"севодня","left_context":["в"],"right_context":["будет"],"candidates":[{"token":"сегодня","rank":0},{"token":"севодня","rank":1}],"scores":{"сегодня":0.72,"севодня":0.15},"expected_token":"сегодня"}
+{"case_id":"fail_closed_low_margin","original_token":"превет","left_context":["мой"],"right_context":["друг"],"candidates":[{"token":"привет","rank":0},{"token":"превет","rank":1}],"scores":{"привет":0.31,"превет":0.30},"expected_token":"превет"}
