@@ -1,127 +1,110 @@
-## Project
+## A. Project identity
 GramLynx is a production-ready microservice for processing user-authored Russian text.
 
-Core contract:
-- Input: `text` + `mode`
-- Output: only `clean_text`
+Core API contract (must remain unchanged unless explicitly decided):
+- Input: `text` + `mode`.
+- Output: only `clean_text`.
 - Do not return explanations, tags, lemmas, morphology, or intermediate artifacts.
 
-## Main goal
-Improve `clean_text` quality for Russian user text while preserving meaning and keeping behavior deterministic and safe.
+Current architectural course:
+- The project is shifting toward context-aware candidate selection as the main development direction.
+- The previous deterministic token-level path is retained as frozen baseline/fallback/reference, not as the main strategic direction.
 
-## Hard constraints
-- Do not change API contract.
+## B. Global safety invariants (non-negotiable)
+- Do not change API contract without explicit decision.
 - Do not paraphrase.
 - Do not rewrite meaning.
 - Do not weaken Protected Zones, buffer logic, guardrails, or rollback.
 - Do not modify text inside Protected Zones.
+- Protected Zones must remain byte-to-byte stable after restore.
+- Guardrails and rollback are mandatory.
+- Fail-closed behavior is preferred over risky behavior.
 - If unsure, prefer no change.
-- All automatic edits must be deterministic.
+- No user text may leak into logs, metrics, or error messages.
 - Python version: 3.10.
 
-## Safety model
-Protected Zones are mandatory and must remain byte-to-byte stable after restore.
-Guardrails and rollback are mandatory.
-Fail-closed behavior is preferred over risky behavior.
-No user text may leak into logs, metrics, or error messages.
+## C. Frozen baseline path (production-safe reference line)
+Status:
+- Current deterministic path is no longer the main development direction.
+- It remains baseline/fallback/reference.
+- Use it for comparison and safety reference only.
 
-## Allowed kinds of improvements
-Preferred improvements:
-- conservative normalization
-- safe whitespace cleanup
-- safe punctuation spacing
-- token-level typo correction from explicit rule maps
-- Russian-specific no-touch / safety predicates
-- morphology only as detector / blocker / scorer / ranker, not as a free-form text rewriter
+Purpose:
+- Preserve stable production-safe behavior.
+- Provide control line for research comparisons.
+- Accept only explicit safe updates approved for baseline maintenance.
 
-Not allowed in the main `/clean` path:
-- LLM-based rewriting
-- probabilistic free-form correction
-- non-deterministic edits
-- substring replacements inside arbitrary tokens
-- edits that require semantic rewriting
+Frozen decisions:
+- Previous apply micro-tuning path is frozen.
+- Previous reranker path is frozen.
+- Deterministic micro-packages are no longer the main strategic direction.
 
-## Working style
-- Make minimal, scoped changes.
-- Read relevant files first.
-- Reuse existing architecture and conventions.
-- Prefer extending current stages/config/tests over inventing parallel systems.
-- For complex tasks, plan before editing.
-- If a task is ambiguous, choose the more conservative implementation.
+## D. Primary research path (main new direction)
+Main direction:
+- Context-aware candidate selection architecture for user text.
 
-## Architecture expectations
-Respect and preserve:
-- FastAPI API surface
-- orchestrator flow
-- policy/config loading
-- stage pipeline S1-S7
-- stage plugin registry/factory
-- Protected Zones detection + masking + restore
-- guardrails + rollback
-- observability without text leakage
+Core model:
+- Large lexicon may be used as candidate source.
+- Final candidate decision must be based on sentence-level context.
+- Decision layer must remain fail-closed (`no candidate` / low confidence => keep original).
 
-## Testing and verification
-Before finishing:
-- run the most relevant targeted tests first
-- then run broader checks when dependencies allow
+Execution mode:
+- All such work starts offline-only in research branches.
+- No production integration without explicit evidence cycle.
+- No broad runtime/backend replacement by default.
 
-Standard checks:
+Recommended research sequence:
+- Phase 1: large lexicon candidate source + KenLM-style sentence scorer.
+- Phase 2: compare against baseline on full public + holdout.
+- Phase 3: only if evidence is strong, design guarded prototype.
+- Phase 4: optionally evaluate masked-LM / edit-based branch if needed.
+
+## E. Evaluation policy
+Standard checks before completion:
 - `ruff check .`
 - `pytest -q`
 
-### Acceptance benchmark policy (current)
-- **Primary source of truth:** full public RuSpellGold (`tests/cases/ruspellgold_full_public.jsonl`, 1711 cases).
-- **Primary measurement path:** current canonical reproducible harness path (`python -m tests.report_ruspellgold_tuning ...`, `symspell_apply`).
-- **Secondary smoke only:** subset benchmark (`tests/cases/ruspellgold_benchmark.jsonl`, 34 cases) and product-regression holdout (`tests/cases/product_regression_user_texts.yml`).
-- Subset/holdout signals should be used to detect **coarse breakage**, but they are not the primary acceptance gate when full public improves without safety regression.
+Benchmark policy:
+- **Primary benchmark:** full public RuSpellGold (`tests/cases/ruspellgold_full_public.jsonl`, 1711 cases).
+- **Primary measurement path:** canonical reproducible harness path (`python -m tests.report_ruspellgold_tuning ...`, `symspell_apply`).
+- **Secondary smoke/supporting checks:** subset benchmark (`tests/cases/ruspellgold_benchmark.jsonl`, 34 cases) and product-regression holdout (`tests/cases/product_regression_user_texts.yml`).
 
-### Acceptance logic for deterministic coverage steps
-- full public `exact_match_pass_count` improves or at least does not degrade;
-- full public `wrong_change` does not increase;
-- full public `smart_regresses_expected_match` does not increase;
-- `rollback_related` does not worsen materially;
-- subset/product-regression are interpreted as secondary regression smoke checks.
+Research-branch evaluation requirements:
+- Evaluate benchmark quality and harmful side effects together.
+- Track at minimum: `exact_match_pass_count/rate`, `wrong_change`, `smart_regresses_expected_match`, `rollback_related`.
+- Subset/holdout are for coarse regression signals, not the primary gate.
 
-Note:
-- historical snapshots are not source-of-truth for new acceptance decisions;
-- source-of-truth is the current canonical reproducible harness path.
+Source-of-truth clarification:
+- Historical benchmark snapshots are reference-only.
+- Current canonical harness path is the source-of-truth for new acceptance decisions.
 
-If a task touches optional metrics functionality, use the environment/dependencies that include metrics extras.
-If a full test run fails because of optional dependency setup, clearly distinguish:
-- whether the new change is correct
-- whether the environment is incomplete
+## F. Branching policy
+- `main` branch: stable/frozen baseline and accepted safe updates only.
+- `research/*` branches: architecture experiments, offline scorers, large lexicon candidate generation, reranking/context selection.
+- No direct merge of research path into `main` without explicit go/no-go review and evidence package.
 
-## Done when
-A task is complete only if:
-- behavior matches the requested scope
-- safety constraints still hold
-- Protected Zones remain intact
-- tests covering the change pass
-- no unrelated refactor is introduced
-- docs/config examples are updated if behavior or setup changed
+## G. Working style with Codex
+- Analyze first, then make the minimal correct implementation.
+- Keep changes scoped and architecture-aligned.
+- Reuse existing structure where possible; avoid parallel production systems.
+- For ambiguity, choose conservative behavior.
+- Each step should have explicit acceptance criteria.
+- End with concrete verification commands.
+- Respond with ready-to-run Codex prompts plus short explanation when prompting help is requested.
+- Do not run `make_pr` unless explicitly requested.
 
-## Preferred prompt response format
-When working on a task:
-1. Briefly state which files you will inspect/change.
-2. Make the smallest correct implementation.
-3. Show diff or summarize concrete file changes.
-4. End with verification commands.
+## H. Current hold/freeze decisions
+- Deterministic token-level expansion is frozen as strategic direction.
+- Apply micro-tuning remains frozen.
+- Previous reranker path remains frozen.
+- Broad production integration of context-aware selection is on hold until explicit evidence cycle passes.
 
-## Repository-specific priorities
-Current product priority is not generic infra expansion.
-Current priority is safe improvement of Russian text cleaning quality on top of the existing production foundation.
-
-## Current stable baseline
-
-- Safe default remains OFF: `enable_candidate_generation_ru: false`.
-- Recommended feature-enabled smart baseline:
-  - `candidate_backend: symspell`
-  - `dictionary_source_ru: app/resources/ru_dictionary_v7.txt`
-  - `max_candidates_ru: 3`
-  - `max_edit_distance_ru: 1`
-  - `candidate_shadow_mode_ru: false`
-- Candidate path is fail-closed on startup if backend dependency or dictionary is missing.
+## I. What not to do
 - Do not change PZ / buffer / guardrails / rollback without explicit request.
-- Do not add new runtime ML/LLM rewriting to `/clean`.
-- Prefer eval-driven changes; use internal/external harness before changing runtime behavior.
-- Treat v7 as the current stable baseline unless explicitly asked to experiment.
+- Do not add runtime ML/LLM rewriting to `/clean`.
+- Do not perform semantic rewriting in any path.
+- Do not introduce unrelated refactors.
+- Do not treat research/offline findings as production-ready without formal review.
+
+Completion rule:
+- A task is done only if requested scope is met, safety invariants hold, Protected Zones remain intact, relevant tests pass, and no unrelated production-path changes are introduced.

@@ -1,0 +1,23 @@
+# Offline experiment parameters only (research scaffold)
+top_k: 5
+min_margin: 1.5
+combined_alpha: 1.0
+combined_beta: 1.0
+beam_width: 4
+min_abs_score: -25.0
+dictionary_source: app/resources/ru_dictionary_v7.txt
+corpus_path: tests/cases/ruspellgold_benchmark.jsonl
+scorer_type: kenlm
+# Preferred: external pre-trained Russian KenLM model
+kenlm_model_path: https://raw.githubusercontent.com/Lednik7/nto-ai-text-recognition/main/models/nto_kenlm_model10.arpa
+# Fallback (independent corpus, still no leakage):
+# kenlm_training_corpus_path: research/context_rerank_v1/resources/external_lm_corpus_ru.txt
+
+# Encoder-ranker scaffold (research-only, optional backend):
+# scorer_type: encoder_ranker
+# encoder_model_name_or_path: ai-forever/ruBert-base
+# batch_size: 8
+# max_seq_len: 128
+# device: cpu
+# cache_path: /tmp/gramlynx_encoder_cache
+# local_files_only: false

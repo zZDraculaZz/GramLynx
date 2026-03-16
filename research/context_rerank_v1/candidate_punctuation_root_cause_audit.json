@@ -1,0 +1,526 @@
+{
+  "full_public": {
+    "dataset": "tests/cases/ruspellgold_full_public.jsonl",
+    "expected_change_cases": 1220,
+    "changed_tokens": 1286,
+    "candidate_source_failure_slices": {
+      "candidate_exists_but_gold_absent_topk": {
+        "count": 772,
+        "rate_over_changed_tokens": 0.6003110419906688
+      },
+      "gold_present_in_topk_but_not_selected": {
+        "count": 253,
+        "rate_over_changed_tokens": 0.19673405909797823
+      },
+      "other": {
+        "count": 251,
+        "rate_over_changed_tokens": 0.19517884914463451
+      },
+      "segmentation_tokenization_mismatch": {
+        "count": 215,
+        "rate_over_changed_tokens": 0.1671850699844479
+      },
+      "token_rejected_before_retrieval": {
+        "count": 8,
+        "rate_over_changed_tokens": 0.006220839813374806
+      },
+      "candidate_polluted_by_punctuation_wrappers": {
+        "count": 2,
+        "rate_over_changed_tokens": 0.0015552099533437014
+      }
+    },
+    "punctuation_noise_audit": {
+      "class_frequency": {
+        "punctuation_adjacency": 239,
+        "repeated_punctuation": 40,
+        "missing_extra_spaces": 149,
+        "quote_bracket_adjacency": 18,
+        "wrapper_no_touch_style": 5,
+        "mixed_alnum_non_ru_shape": 8,
+        "hashtags_mentions_urls": 7
+      },
+      "retrieval_selection_breakdown": {
+        "any_candidate": {
+          "yes": 285,
+          "no": 83
+        },
+        "gold_in_topk": {
+          "no": 289,
+          "yes": 79
+        },
+        "punctuation_adjacency": {
+          "candidate_exists_but_gold_absent_topk": 130,
+          "gold_present_in_topk_but_not_selected": 50,
+          "other": 56,
+          "candidate_polluted_by_punctuation_wrappers": 2,
+          "token_rejected_before_retrieval": 1
+        },
+        "repeated_punctuation": {
+          "candidate_exists_but_gold_absent_topk": 17,
+          "other": 10,
+          "gold_present_in_topk_but_not_selected": 12,
+          "token_rejected_before_retrieval": 1
+        },
+        "missing_extra_spaces": {
+          "candidate_exists_but_gold_absent_topk": 90,
+          "other": 23,
+          "gold_present_in_topk_but_not_selected": 33,
+          "token_rejected_before_retrieval": 3
+        },
+        "selected_when_gold_in_topk": {
+          "not_selected": 79
+        },
+        "quote_bracket_adjacency": {
+          "gold_present_in_topk_but_not_selected": 2,
+          "candidate_polluted_by_punctuation_wrappers": 2,
+          "candidate_exists_but_gold_absent_topk": 10,
+          "other": 4
+        },
+        "wrapper_no_touch_style": {
+          "gold_present_in_topk_but_not_selected": 1,
+          "candidate_polluted_by_punctuation_wrappers": 2,
+          "candidate_exists_but_gold_absent_topk": 2
+        },
+        "mixed_alnum_non_ru_shape": {
+          "token_rejected_before_retrieval": 8
+        },
+        "hashtags_mentions_urls": {
+          "candidate_exists_but_gold_absent_topk": 6,
+          "other": 1
+        }
+      }
+    },
+    "token_normalization_audit": {
+      "notes": "diagnosis-only retrieval probes; original token is preserved for apply path",
+      "gold_in_topk_probe_counts": {
+        "baseline_gold_in_topk": 253,
+        "lowercase_gold_in_topk": 253,
+        "yo_to_e_gold_in_topk": 253,
+        "strip_punct_gold_in_topk": 253,
+        "chat_noise_cleanup_gold_in_topk": 252
+      }
+    },
+    "gold_in_topk_under_noise": {
+      "noise_changed_tokens": 368,
+      "any_candidate_coverage": {
+        "yes": 285,
+        "no": 83
+      },
+      "gold_in_topk_coverage": {
+        "no": 289,
+        "yes": 79
+      },
+      "selected_vs_not_selected_when_gold_in_topk": {
+        "not_selected": 79
+      }
+    },
+    "representative_examples": {
+      "candidate_exists_but_gold_absent_topk": [
+        {
+          "input_text": "В галерее еще больше промо и кадров из сериала в отличном качестве и большом размере, за что снова спасибо",
+          "input_token": "еще",
+          "gold_token": "ещё",
+          "current_apply_token": "еще",
+          "top_k": [
+            "ее",
+            "еле",
+            "веке",
+            "весе",
+            "вещей"
+          ],
+          "noise_flags": {}
+        },
+        {
+          "input_text": "В некоторых случаях будет необходимо предоставить нотариально заверенное согласие супруга на отчуждение или приобретение имущества, если оно было приобретено в браке; свидетельство о рождении ребенка; нотариально заверенную доверенность, если одна из сторон не может присутствовать при сделке; Устав, выписку из единого госреестра юридических лиц, извлечение из него же, протокол собрания учредителей о принятии решения заключить договор и прочее.",
+          "input_token": "ребенка",
+          "gold_token": "ребёнка",
+          "current_apply_token": "ребенка",
+          "top_k": [
+            "ребенку",
+            "ребенком",
+            "ребенок",
+            "банка",
+            "белка"
+          ],
+          "noise_flags": {
+            "punctuation_adjacency": true
+          }
+        },
+        {
+          "input_text": "В некоторых случаях будет необходимо предоставить нотариально заверенное согласие супруга на отчуждение или приобретение имущества, если оно было приобретено в браке; свидетельство о рождении ребенка; нотариально заверенную доверенность, если одна из сторон не может присутствовать при сделке; Устав, выписку из единого госреестра юридических лиц, извлечение из него же, протокол собрания учредителей о принятии решения заключить договор и прочее.",
+          "input_token": "Устав",
+          "gold_token": "устав",
+          "current_apply_token": "Устав",
+          "top_k": [
+            "став",
+            "устал",
+            "встал",
+            "состав",
+            "ста"
+          ],
+          "noise_flags": {
+            "punctuation_adjacency": true
+          }
+        },
+        {
+          "input_text": "Видела в городе афиши, анонсрующие ее концерт.",
+          "input_token": "ее",
+          "gold_token": "её",
+          "current_apply_token": "ее",
+          "top_k": [
+            "де",
+            "е",
+            "ей",
+            "ел",
+            "еле"
+          ],
+          "noise_flags": {}
+        },
+        {
+          "input_text": "За малошумность подлодку предыдущего поколения проекта 877 (класс Kilo) на Западе назвали черной дырой.",
+          "input_token": "черной",
+          "gold_token": "чёрной",
+          "current_apply_token": "черной",
+          "top_k": [
+            "черное",
+            "черном",
+            "черный",
+            "верно",
+            "верный"
+          ],
+          "noise_flags": {}
+        }
+      ],
+      "gold_present_in_topk_but_not_selected": [
+        {
+          "input_text": "Включение и выключение насоса происходит автономно с использованием отделного подключенного к нему поплавка.",
+          "input_token": "отделного",
+          "gold_token": "отдельного",
+          "current_apply_token": "отделного",
+          "top_k": [
+            "отдельного",
+            "одного",
+            "отделом",
+            "отдельно",
+            "отдельной"
+          ],
+          "noise_flags": {}
+        },
+        {
+          "input_text": "Если коротко — программное обеспечение для здравохранения и ИТ-услуги в этой же области.",
+          "input_token": "здравохранения",
+          "gold_token": "здравоохранения",
+          "current_apply_token": "здравохранения",
+          "top_k": [
+            "здравоохранения"
+          ],
+          "noise_flags": {}
+        },
+        {
+          "input_text": "Законодательство Беларуси в свере IT еще настолько сырое, что зияющие дыры игрыют на руку не совсем честным “ бизнесменам ”.",
+          "input_token": "свере",
+          "gold_token": "сфере",
+          "current_apply_token": "свере",
+          "top_k": [
+            "свете",
+            "севере",
+            "сфере",
+            "вверх",
+            "веке"
+          ],
+          "noise_flags": {}
+        },
+        {
+          "input_text": "Законодательство Беларуси в свере IT еще настолько сырое, что зияющие дыры игрыют на руку не совсем честным “ бизнесменам ”.",
+          "input_token": "игрыют",
+          "gold_token": "играют",
+          "current_apply_token": "игрыют",
+          "top_k": [
+            "играют",
+            "играет",
+            "играю",
+            "игры",
+            "игр"
+          ],
+          "noise_flags": {}
+        },
+        {
+          "input_text": "И если локальные протечки в кровлях еще можно исправить с помощью локальных же работ, куда хуже, клгда нарушена технология кладки в целом.",
+          "input_token": "клгда",
+          "gold_token": "когда",
+          "current_apply_token": "клгда",
+          "top_k": [
+            "когда",
+            "блюда",
+            "клуба",
+            "куда",
+            "льда"
+          ],
+          "noise_flags": {}
+        }
+      ],
+      "segmentation_tokenization_mismatch": [
+        {
+          "input": "Поролоновые подушки иили бинт понадобятся, если половой член окажется сверх чувствительным: они предотвращают неприятные ощущения при ношении экстендера при больших нагрузках на член.",
+          "expected": "Поролоновые подушки или бинт понадобятся, если половой член окажется сверхчувствительным: они предотвращают неприятные ощущения при ношении экстендера при больших нагрузках на член.",
+          "current_apply": "Поролоновые подушки иили бинт понадобятся, если половой член окажется сверх чувствительным: они предотвращают неприятные ощущения при ношении экстендера при больших нагрузках на член."
+        },
+        {
+          "input": "1.2 Настоящий технический кодекс является обязательным для всех организаций, учрежденийи предприятий, юридических и физических лиц, осуществляющих разработку проектной документации на ремонт, реконструкцию, модернизацию зданий и сооружений, а также реставрацию материальных недвижимых историко-культурных ценностей.",
+          "expected": "1.2 Настоящий технический кодекс является обязательным для всех организаций, учреждений и предприятий, юридических и физических лиц, осуществляющих разработку проектной документации на ремонт, реконструкцию, модернизацию зданий и сооружений, а также реставрацию материальных недвижимых историко-культурных ценностей.",
+          "current_apply": "1.2 Настоящий технический кодекс является обязательным для всех организаций, учрежденийи предприятий, юридических и физических лиц, осуществляющих разработку проектной документации на ремонт, реконструкцию, модернизацию зданий и сооружений, а также реставрацию материальных недвижимых историко-культурных ценностей."
+        },
+        {
+          "input": "А если есть деньги на Сохранение - чтож, тоже Бизнес, хоть и подешевле.",
+          "expected": "А если есть деньги на \"сохранение\" - что ж, тоже Бизнес, хоть и подешевле.",
+          "current_apply": "А если есть деньги на Сохранение - чтож, тоже Бизнес, хоть и подешевле."
+        },
+        {
+          "input": "В итоге, плюсов больше, чем минусов, но обо всем по-порядку.",
+          "expected": "В итоге, плюсов больше, чем минусов, но обо всем по порядку.",
+          "current_apply": "В итоге, плюсов больше, чем минусов, но обо всем по-порядку."
+        },
+        {
+          "input": "Например: запуск игры (CS 1.5 и более старых версий) не через ярлык, а через файл hl. exe, по любому приведёт к незапуску консоли.",
+          "expected": "Например: запуск игры (CS 1.5 и более старых версий) не через ярлык, а через файл hl. exe, по-любому приведёт к незапуску консоли.",
+          "current_apply": "Например: запуск игры (CS 1.5 и более старых версий) не через ярлык, а через файл hl. exe, по любому приведёт к незапуску консоли."
+        }
+      ],
+      "candidate_polluted_by_punctuation_wrappers": [
+        {
+          "input_text": "Информацию налоговой книжки (где и кем выдана , льготы , иждевенцы)",
+          "input_token": "иждевенцы",
+          "gold_token": "иждивенцы",
+          "current_apply_token": "иждевенцы",
+          "top_k": [],
+          "noise_flags": {
+            "punctuation_adjacency": true,
+            "quote_bracket_adjacency": true,
+            "wrapper_no_touch_style": true
+          }
+        },
+        {
+          "input_text": "Особое внимание было уделено профилактике экстремизма, преступности и правонарушений в молодежной среде, вовлечению молодежи в социальную практику (волонтерство), трудовую деятельность, профориентации молодежи, гражданско-патриотическому воспитанию, поддержке и развитию молодежных общественных инициатив, пропаганде здорового образа жизни, поддержке талантливой молодежи.",
+          "input_token": "волонтерство",
+          "gold_token": "волонтёрство",
+          "current_apply_token": "волонтерство",
+          "top_k": [],
+          "noise_flags": {
+            "punctuation_adjacency": true,
+            "quote_bracket_adjacency": true,
+            "wrapper_no_touch_style": true
+          }
+        }
+      ],
+      "token_rejected_before_retrieval": [
+        {
+          "input_text": "Cвидетедьства о началах бухгалтерии можно найти в древней истории.",
+          "input_token": "Cвидетедьства",
+          "gold_token": "Свидетельства",
+          "current_apply_token": "Cвидетедьства",
+          "top_k": [],
+          "noise_flags": {
+            "mixed_alnum_non_ru_shape": true
+          }
+        },
+        {
+          "input_text": "Hовый pусский на кpутейшей мощнейшей тачке заезжает на бензоколонку и начинает запpавлятся.",
+          "input_token": "запpавлятся",
+          "gold_token": "запpавляться",
+          "current_apply_token": "запpавлятся",
+          "top_k": [],
+          "noise_flags": {
+            "punctuation_adjacency": true,
+            "mixed_alnum_non_ru_shape": true
+          }
+        },
+        {
+          "input_text": "Холдинг Mail.Ru Group окончательно объединяет сервисы обмена сообщениямb ICQ и Агент Mail.Ru. В новой «аське» появятся новые социальные функции, например, пользователи смогут объединяться в группы по интересами.",
+          "input_token": "сообщениямb",
+          "gold_token": "сообщениями",
+          "current_apply_token": "сообщениямb",
+          "top_k": [],
+          "noise_flags": {
+            "missing_extra_spaces": true,
+            "mixed_alnum_non_ru_shape": true
+          }
+        },
+        {
+          "input_text": "Трое полицейских и водитель микроавтобуса, в котором они находились, погибли в крупной аварии в Кемеровской области. Еще более десяти стражей порядка, направлявшихся на занятия в учебный центр, получили различные травмы. Предполагаемым виновником ДТП стал водитель автомобиля Renault Logan, совершивший неудачный маневр и вытолrнувший «Газель» с полицейскими на встречную полосу.",
+          "input_token": "вытолrнувший",
+          "gold_token": "вытолкнувший",
+          "current_apply_token": "вытолrнувший",
+          "top_k": [],
+          "noise_flags": {
+            "mixed_alnum_non_ru_shape": true
+          }
+        },
+        {
+          "input_text": "Прогноз социально-экономического развития сельского поселения Ксизовский сельсовет Задонского муниципального района на долгосрочный период 2019 - 2024 годов (далее - Прогноз) разработан с целью определения наиболее вероятных количественных параметров развития основных отраслей экономики и социальной сферыразвития сельского поселения Ксизовский сельсовет.",
+          "input_token": "2019",
+          "gold_token": "2019-2024",
+          "current_apply_token": "2019",
+          "top_k": [],
+          "noise_flags": {
+            "mixed_alnum_non_ru_shape": true
+          }
+        }
+      ]
+    },
+    "ranked_root_causes": [
+      {
+        "name": "candidate_exists_but_gold_absent_topk",
+        "count": 772
+      },
+      {
+        "name": "gold_present_in_topk_but_not_selected",
+        "count": 253
+      },
+      {
+        "name": "other",
+        "count": 251
+      },
+      {
+        "name": "segmentation_tokenization_mismatch",
+        "count": 215
+      },
+      {
+        "name": "token_rejected_before_retrieval",
+        "count": 8
+      },
+      {
+        "name": "candidate_polluted_by_punctuation_wrappers",
+        "count": 2
+      }
+    ]
+  },
+  "holdout": {
+    "dataset": "tests/cases/product_regression_user_texts.yml",
+    "expected_change_cases": 23,
+    "changed_tokens": 20,
+    "candidate_source_failure_slices": {
+      "gold_present_in_topk_but_not_selected": {
+        "count": 20,
+        "rate_over_changed_tokens": 1.0
+      }
+    },
+    "punctuation_noise_audit": {
+      "class_frequency": {
+        "missing_extra_spaces": 5,
+        "punctuation_adjacency": 3
+      },
+      "retrieval_selection_breakdown": {
+        "any_candidate": {
+          "yes": 5
+        },
+        "gold_in_topk": {
+          "yes": 5
+        },
+        "selected_when_gold_in_topk": {
+          "not_selected": 5
+        },
+        "missing_extra_spaces": {
+          "gold_present_in_topk_but_not_selected": 5
+        },
+        "punctuation_adjacency": {
+          "gold_present_in_topk_but_not_selected": 3
+        }
+      }
+    },
+    "token_normalization_audit": {
+      "notes": "diagnosis-only retrieval probes; original token is preserved for apply path",
+      "gold_in_topk_probe_counts": {
+        "baseline_gold_in_topk": 20,
+        "lowercase_gold_in_topk": 20,
+        "yo_to_e_gold_in_topk": 20,
+        "strip_punct_gold_in_topk": 20,
+        "chat_noise_cleanup_gold_in_topk": 20
+      }
+    },
+    "gold_in_topk_under_noise": {
+      "noise_changed_tokens": 5,
+      "any_candidate_coverage": {
+        "yes": 5
+      },
+      "gold_in_topk_coverage": {
+        "yes": 5
+      },
+      "selected_vs_not_selected_when_gold_in_topk": {
+        "not_selected": 5
+      }
+    },
+    "representative_examples": {
+      "gold_present_in_topk_but_not_selected": [
+        {
+          "input_text": "севодня буду позже",
+          "input_token": "севодня",
+          "gold_token": "сегодня",
+          "current_apply_token": "севодня",
+          "top_k": [
+            "сегодня",
+            "своя",
+            "северная",
+            "сезон",
+            "сезона"
+          ],
+          "noise_flags": {}
+        },
+        {
+          "input_text": "пажалуста скинь адрес",
+          "input_token": "пажалуста",
+          "gold_token": "пожалуйста",
+          "current_apply_token": "пажалуста",
+          "top_k": [
+            "пожалуйста"
+          ],
+          "noise_flags": {}
+        },
+        {
+          "input_text": "порусски инструкция написана непонятно",
+          "input_token": "порусски",
+          "gold_token": "по-русски",
+          "current_apply_token": "порусски",
+          "top_k": [
+            "по-русски",
+            "русски",
+            "поиски",
+            "покупки",
+            "русские"
+          ],
+          "noise_flags": {}
+        },
+        {
+          "input_text": "попрежнему не работает",
+          "input_token": "попрежнему",
+          "gold_token": "по-прежнему",
+          "current_apply_token": "попрежнему",
+          "top_k": [
+            "по-прежнему",
+            "прежнему"
+          ],
+          "noise_flags": {}
+        },
+        {
+          "input_text": "изза этого снял звезду",
+          "input_token": "изза",
+          "gold_token": "из-за",
+          "current_apply_token": "изза",
+          "top_k": [
+            "из-за",
+            "база",
+            "газа",
+            "за",
+            "зима"
+          ],
+          "noise_flags": {}
+        }
+      ]
+    },
+    "ranked_root_causes": [
+      {
+        "name": "gold_present_in_topk_but_not_selected",
+        "count": 20
+      }
+    ]
+  }
+}

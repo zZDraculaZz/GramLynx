@@ -1,0 +1,50 @@
+{
+  "full_public": {
+    "before": {
+      "expected_change_cases": 1220,
+      "changed_tokens": 1286,
+      "cases_with_any_candidate": 725,
+      "cases_with_gold_in_topk": 239,
+      "no_candidate_count": 261,
+      "candidate_exists_but_gold_absent_topk": 772,
+      "gold_present_in_topk_but_not_selected": 253,
+      "segmentation_tokenization_mismatch": 215,
+      "punctuation_wrapper_related_failure_count": 27
+    },
+    "after": {
+      "expected_change_cases": 1220,
+      "changed_tokens": 1286,
+      "cases_with_any_candidate": 729,
+      "cases_with_gold_in_topk": 250,
+      "no_candidate_count": 254,
+      "candidate_exists_but_gold_absent_topk": 767,
+      "gold_present_in_topk_but_not_selected": 253,
+      "segmentation_tokenization_mismatch": 215,
+      "punctuation_wrapper_related_failure_count": 27
+    }
+  },
+  "holdout": {
+    "before": {
+      "expected_change_cases": 23,
+      "changed_tokens": 20,
+      "cases_with_any_candidate": 19,
+      "cases_with_gold_in_topk": 19,
+      "no_candidate_count": 0,
+      "candidate_exists_but_gold_absent_topk": 0,
+      "gold_present_in_topk_but_not_selected": 20,
+      "segmentation_tokenization_mismatch": 0,
+      "punctuation_wrapper_related_failure_count": 0
+    },
+    "after": {
+      "expected_change_cases": 23,
+      "changed_tokens": 20,
+      "cases_with_any_candidate": 19,
+      "cases_with_gold_in_topk": 19,
+      "no_candidate_count": 0,
+      "candidate_exists_but_gold_absent_topk": 0,
+      "gold_present_in_topk_but_not_selected": 20,
+      "segmentation_tokenization_mismatch": 0,
+      "punctuation_wrapper_related_failure_count": 0
+    }
+  }
+}

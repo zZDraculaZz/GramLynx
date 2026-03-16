@@ -1,0 +1,236 @@
+{
+  "baseline": {
+    "total_cases": 32,
+    "exact_match_pass_count": 9,
+    "exact_match_pass_rate": 0.28125,
+    "wrong_change": 0,
+    "smart_regresses_expected_match": 4,
+    "rollback_related": 0
+  },
+  "current_apply": {
+    "total_cases": 32,
+    "exact_match_pass_count": 13,
+    "exact_match_pass_rate": 0.40625,
+    "wrong_change": 5,
+    "smart_regresses_expected_match": 0,
+    "rollback_related": 1
+  },
+  "research_replay_v1": {
+    "total_cases": 32,
+    "exact_match_pass_count": 12,
+    "exact_match_pass_rate": 0.375,
+    "wrong_change": 5,
+    "smart_regresses_expected_match": 5,
+    "rollback_related": 0
+  },
+  "research_replay_v2": {
+    "total_cases": 32,
+    "exact_match_pass_count": 9,
+    "exact_match_pass_rate": 0.28125,
+    "wrong_change": 0,
+    "smart_regresses_expected_match": 4,
+    "rollback_related": 0
+  },
+  "buckets": {
+    "research_v1_beats_current_apply": [
+      {
+        "input_text": "севодня буду позже",
+        "expected_clean_text": "сегодня буду позже",
+        "baseline_output": "севодня буду позже",
+        "current_apply_output": "севодня буду позже",
+        "research_replay_v1_output": "сегодня буду позже",
+        "research_replay_v2_output": "севодня буду позже",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -17.605514526367188,
+        "beam_changed_decision": true
+      },
+      {
+        "input_text": "пажалуста скинь адрес",
+        "expected_clean_text": "пожалуйста скинь адрес",
+        "baseline_output": "пажалуста скинь адрес",
+        "current_apply_output": "пажалуста скинь адрес",
+        "research_replay_v1_output": "пожалуйста скинь адрес",
+        "research_replay_v2_output": "пажалуста скинь адрес",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -17.605514526367188,
+        "beam_changed_decision": true
+      },
+      {
+        "input_text": "тикет 550e8400-e29b-41d4-a716-446655440000 создан севодня",
+        "expected_clean_text": "тикет 550e8400-e29b-41d4-a716-446655440000 создан сегодня",
+        "baseline_output": "тикет 550e8400-e29b-41d4-a716-446655440000 создан севодня",
+        "current_apply_output": "тикет 550e8400-e29b-41d4-a716-446655440000 создан севодня",
+        "research_replay_v1_output": "тикет 550e8400-e29b-41d4-a716-446655440000 создан сегодня",
+        "research_replay_v2_output": "тикет 550e8400-e29b-41d4-a716-446655440000 создан севодня",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -21.132442474365234,
+        "beam_changed_decision": true
+      },
+      {
+        "input_text": "поанглийски и понемецки читаю",
+        "expected_clean_text": "по-английски и по-немецки читаю",
+        "baseline_output": "поанглийски и понемецки читаю",
+        "current_apply_output": "поанглийски и понемецки читаю",
+        "research_replay_v1_output": "по-английски и по-немецки читаю",
+        "research_replay_v2_output": "поанглийски и понемецки читаю",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -20.6345272064209,
+        "beam_changed_decision": true
+      }
+    ],
+    "research_v1_worse_than_current_apply": [
+      {
+        "input_text": "привет ,как дела ?",
+        "expected_clean_text": "привет, как дела?",
+        "baseline_output": "привет ,как дела ?",
+        "current_apply_output": "привет, как дела?",
+        "research_replay_v1_output": "привет ,как дела ?",
+        "research_replay_v2_output": "привет ,как дела ?",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -17.605514526367188,
+        "beam_changed_decision": false
+      },
+      {
+        "input_text": "это   тест   без   паники",
+        "expected_clean_text": "это тест без паники",
+        "baseline_output": "это   тест   без   паники",
+        "current_apply_output": "это тест без паники",
+        "research_replay_v1_output": "это   тест   без   паники",
+        "research_replay_v2_output": "это   тест   без   паники",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -21.132442474365234,
+        "beam_changed_decision": false
+      },
+      {
+        "input_text": "   севодня   ",
+        "expected_clean_text": "севодня",
+        "baseline_output": "   севодня   ",
+        "current_apply_output": "севодня",
+        "research_replay_v1_output": "   сегодня   ",
+        "research_replay_v2_output": "   севодня   ",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -10.55165958404541,
+        "beam_changed_decision": true
+      },
+      {
+        "input_text": "первый\n\n\nвторой",
+        "expected_clean_text": "первый\n\nвторой",
+        "baseline_output": "первый\n\n\nвторой",
+        "current_apply_output": "первый\n\nвторой",
+        "research_replay_v1_output": "первый\n\n\nвторой",
+        "research_replay_v2_output": "первый\n\n\nвторой",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -14.078587532043457,
+        "beam_changed_decision": false
+      },
+      {
+        "input_text": "#севодня был стрим",
+        "expected_clean_text": "#севодня был стрим",
+        "baseline_output": "#севодня был стрим",
+        "current_apply_output": "#севодня был стрим",
+        "research_replay_v1_output": "#сегодня был стрим",
+        "research_replay_v2_output": "#севодня был стрим",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -17.605514526367188,
+        "beam_changed_decision": true
+      }
+    ],
+    "research_v2_beats_current_apply": [],
+    "research_v2_worse_than_current_apply": [
+      {
+        "input_text": "привет ,как дела ?",
+        "expected_clean_text": "привет, как дела?",
+        "baseline_output": "привет ,как дела ?",
+        "current_apply_output": "привет, как дела?",
+        "research_replay_v1_output": "привет ,как дела ?",
+        "research_replay_v2_output": "привет ,как дела ?",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -17.605514526367188,
+        "beam_changed_decision": false
+      },
+      {
+        "input_text": "это   тест   без   паники",
+        "expected_clean_text": "это тест без паники",
+        "baseline_output": "это   тест   без   паники",
+        "current_apply_output": "это тест без паники",
+        "research_replay_v1_output": "это   тест   без   паники",
+        "research_replay_v2_output": "это   тест   без   паники",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -21.132442474365234,
+        "beam_changed_decision": false
+      },
+      {
+        "input_text": "   севодня   ",
+        "expected_clean_text": "севодня",
+        "baseline_output": "   севодня   ",
+        "current_apply_output": "севодня",
+        "research_replay_v1_output": "   сегодня   ",
+        "research_replay_v2_output": "   севодня   ",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -10.55165958404541,
+        "beam_changed_decision": true
+      },
+      {
+        "input_text": "первый\n\n\nвторой",
+        "expected_clean_text": "первый\n\nвторой",
+        "baseline_output": "первый\n\n\nвторой",
+        "current_apply_output": "первый\n\nвторой",
+        "research_replay_v1_output": "первый\n\n\nвторой",
+        "research_replay_v2_output": "первый\n\n\nвторой",
+        "current_apply_rollback_related": false,
+        "research_replay_v1_rollback_related": false,
+        "research_replay_v2_rollback_related": false,
+        "v2_base_component": 0.0,
+        "v2_kenlm_component": -14.078587532043457,
+        "beam_changed_decision": false
+      }
+    ]
+  },
+  "bucket_counts": {
+    "research_v1_beats_current_apply": 4,
+    "research_v1_worse_than_current_apply": 5,
+    "research_v2_beats_current_apply": 0,
+    "research_v2_worse_than_current_apply": 4,
+    "beam_changed_decision_count": 9
+  },
+  "v2_score_contribution": {
+    "base_component_sum": -1.6,
+    "kenlm_component_sum": -636.8082895278931
+  }
+}
