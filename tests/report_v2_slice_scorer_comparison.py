@@ -7,7 +7,14 @@ import json
 import os
 from pathlib import Path
 
-from app.core.v2 import CandidateOption, KenLMScorer, SelectorContext, SymSpellCandidateSource, is_kenlm_available
+from app.core.v2 import (
+    CandidateOption,
+    ContextWindowHeuristicScorer,
+    KenLMScorer,
+    SelectorContext,
+    SymSpellCandidateSource,
+    is_kenlm_available,
+)
 from app.core.v2.offline_eval import RankBasedScorer, run_slice_scorer_comparison
 
 DEFAULT_SLICE_PATH = Path("tests/cases/v2_token_replay_slice_a.jsonl")
@@ -95,6 +102,8 @@ def format_compact_report(
 
 
 def _resolve_challenger(*, mode: str, kenlm_model_path: Path | None) -> tuple[object, str, str | None]:
+    if mode == "heuristic":
+        return ContextWindowHeuristicScorer(), "ContextWindowHeuristicScorer", None
     if mode == "kenlm":
         blocker = get_kenlm_mode_blocker(kenlm_model_path)
         if blocker is None:
@@ -130,7 +139,7 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("--cases", default=str(DEFAULT_SLICE_PATH), help="Path to text-clean replay slice (jsonl/yaml)")
     p.add_argument("--dictionary", required=True, help="Path to SymSpell dictionary text file")
     p.add_argument("--max-candidates", type=int, default=5)
-    p.add_argument("--mode", choices=("deterministic", "kenlm"), default="deterministic")
+    p.add_argument("--mode", choices=("deterministic", "heuristic", "kenlm"), default="deterministic")
     p.add_argument("--kenlm-model", default=None, help=f"Path to KenLM ARPA/binary model (or use {KENLM_MODEL_ENV})")
     p.add_argument("--output-json", default=str(DEFAULT_OUTPUT_JSON), help="Path to output JSON payload")
     return p

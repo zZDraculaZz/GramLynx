@@ -64,6 +64,29 @@ def test_run_report_and_format_compact_output_default_mode(tmp_path: Path) -> No
     assert "- decision_reason_counts_delta:" in text
 
 
+
+
+def test_run_report_heuristic_mode_runs_with_valid_structure(tmp_path: Path) -> None:
+    dictionary = tmp_path / "slice_dict.txt"
+    _write_dictionary(dictionary)
+
+    payload, challenger_name, blocker = run_report(
+        cases_path=Path("tests/cases/v2_token_replay_slice_a.jsonl"),
+        dictionary_path=dictionary,
+        max_candidates=5,
+        mode="heuristic",
+    )
+
+    assert blocker is None
+    assert challenger_name == "ContextWindowHeuristicScorer"
+    assert payload["summary_a"]["total_cases"] == 10
+    assert payload["summary_b"]["total_cases"] == 10
+    assert isinstance(payload["delta"], dict)
+
+    text = format_compact_report(payload, requested_mode="heuristic", challenger_name=challenger_name, blocker=blocker)
+    assert "- requested_mode: heuristic" in text
+    assert "- challenger_scorer: ContextWindowHeuristicScorer" in text
+
 def test_run_report_kenlm_mode_falls_back_with_clear_blocker(tmp_path: Path) -> None:
     dictionary = tmp_path / "slice_dict.txt"
     _write_dictionary(dictionary)
